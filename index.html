@@ -252,7 +252,7 @@ dialog p{margin:0;color:var(--muted);font-size:.9rem}
   <section class="panel">
     <details class="rules">
       <summary>Regras de categorização</summary>
-      <p class="help">Cada categoria tem palavras-chave separadas por vírgulas. Um movimento fica na primeira categoria (pela ordem abaixo) cuja palavra aparece na descrição, por isso "TRF RENDA" cai em Casa e só as transferências que não reconhece ficam em Transferências. Maiúsculas e acentos não contam. Quando mudas a categoria de um movimento na tabela, podes criar uma regra a partir dele.</p>
+      <p class="help">Cada categoria tem palavras-chave separadas por vírgulas. Cada palavra-chave tem de aparecer no início de uma palavra da descrição; maiúsculas, acentos e símbolos não contam. Se várias baterem certo, ganha a mais comprida (por isso "TRF RENDA" cai em Casa e "UBER EATS" em Restauração, não em Transportes); em empate, ganha a primeira categoria pela ordem abaixo. As regras que crias a partir de um movimento ganham sempre. Transferências enviadas a pessoas contam como despesa (MB WAY / Pessoas) e as recebidas como rendimento; só as transferências entre contas tuas (Revolut, XTB…) ficam fora dos totais. Quando mudas a categoria de um movimento na tabela, podes criar uma regra a partir dele.</p>
       <div class="rulegrid" id="rulegrid"></div>
       <div class="filters" style="margin-top:12px"><button class="primary" id="saveRules">Guardar regras</button><button id="resetRules">Repor regras de origem</button></div>
     </details>
@@ -392,7 +392,7 @@ $("authForm").addEventListener("submit", async e=>{
       const meta = {user, salt:b64(salt), iter:ITER};
       const key = await deriveKey(pass, salt, ITER);
       session = {key, meta};
-      state = {tx:[], overrides:{}, rules:defaultRules(), sample:false};
+      state = {tx:[], overrides:{}, rules:defaultRules(), rulesV:RULES_V, sample:false};
       await save();
       try{ navigator.storage && navigator.storage.persist && navigator.storage.persist(); }catch(e){}
       startApp();
@@ -408,6 +408,7 @@ $("authForm").addEventListener("submit", async e=>{
       }
       failures=0; session={key, meta:{user:v.user, salt:v.salt, iter:v.iter}}; state=data;
       state.rules = Object.assign(defaultRules(), state.rules||{});
+      if((state.rulesV||1)<RULES_V){ upgradeRules(); save(); }
       startApp();
     }
   } catch(ex){
@@ -475,16 +476,41 @@ const CATS = [
   {k:"Lazer", c:"#5a8f3a", kw:"cinema, nos cinemas, uci, bilheteira, ticketline, blueticket, hotel, booking, airbnb, ryanair, tap , easyjet, museu, teatro"},
   {k:"MB WAY / Pessoas", c:"#6f8a7a", kw:"mb way, mbway"},
   {k:"Levantamentos", c:"#7d7d6a", kw:"levantamento, lev., lev atm, lev "},
-  {k:"Impostos e Estado", c:"#8c5a5a", kw:"autoridade tributaria, financas, at -, seg social, seguranca social, iuc, imi, irs, portal das financas"},
+  {k:"Impostos e Estado", c:"#8c5a5a", kw:"autoridade tributaria, financas, seg social, seguranca social, iuc, imi, irs, portal das financas"},
   {k:"Banco e comissões", c:"#806f8f", kw:"comissao, imposto selo, manutencao conta, anuidade, juros devedores"},
   {k:"Transferências", c:"#8a95a0", kw:"trf, transf, transferencia, sepa, trf.p/, trf de, trf para"},
   {k:"Outros", c:"#9aa39c", kw:""}
 ];
 const EXCLUDED = new Set(["Transferências"]);
 const COLOR = Object.fromEntries(CATS.map(c=>[c.k,c.c]));
-function defaultRules(){ return Object.fromEntries(CATS.map(c=>[c.k,c.kw])); }
+/* Palavras-chave acrescentadas depois da primeira versão. Contas antigas recebem-nas uma vez,
+   ao abrir; não voltam a ser acrescentadas se as apagares. Transferências de e para pessoas
+   contam: as enviadas em "MB WAY / Pessoas", as recebidas em Rendimentos. */
+const RULES_V = 2;
+const RULES_ADDED = {
+  "Rendimentos": "ips, trf credito",
+  "Supermercado": "p d go",
+  "Restauração": "caffe, my break",
+  "Subscrições": "uber one, vivagym, gym",
+  "MB WAY / Pessoas": "trf imediata",
+  "Transferências": "revolut, xtb, xtb spolka"
+};
+const RULES_REMOVED = ["at -"];
+const splitKw = v => String(v??"").split(",").map(s=>s.trim()).filter(Boolean);
+function defaultRules(){ return Object.fromEntries(CATS.map(c=>[c.k, [...splitKw(c.kw), ...splitKw(RULES_ADDED[c.k])].join(", ")])); }
+function upgradeRules(){
+  if((state.rulesV||1)>=RULES_V) return;
+  const have=new Set(Object.values(state.rules).flatMap(v=>splitKw(v).map(clean)));
+  for(const k in state.rules) state.rules[k]=splitKw(state.rules[k]).filter(s=>!RULES_REMOVED.includes(s)).join(", ");
+  for(const [k,add] of Object.entries(RULES_ADDED)){
+    const extra=splitKw(add).filter(s=>!have.has(clean(s)));
+    if(extra.length) state.rules[k]=[...splitKw(state.rules[k]), ...extra].join(", ");
+  }
+  state.rulesV=RULES_V;
+}
 
 const norm = s => String(s??"").normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase().replace(/\s+/g," ").trim();
+const clean = s => norm(s).replace(/[^a-z0-9&]+/g," ").trim();
 const eur = new Intl.NumberFormat("pt-PT",{style:"currency",currency:"EUR"});
 const fmt = v => eur.format(v);
 const MES = ["jan","fev","mar","abr","mai","jun","jul","ago","set","out","nov","dez"];
@@ -494,12 +520,19 @@ const ymLabel = (k,long) => { const [y,m]=k.split("-"); return long? `${MESL[+m-
 const esc = s => String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 
 let RULES = [];
-function compiledRules(){ return CATS.map(c=>({k:c.k, kws:String(state.rules[c.k]??"").split(",").map(s=>norm(s)).filter(Boolean)})); }
+function compiledRules(){ return CATS.map(c=>({k:c.k, kws:splitKw(state.rules[c.k]).map(clean).filter(Boolean)})); }
+/* Descrição e palavras-chave são limpas da mesma maneira (sem acentos nem símbolos) e cada
+   palavra-chave tem de começar no início de uma palavra. As regras criadas a partir de um
+   movimento ("Criar regra") ganham sempre; entre as restantes ganha a mais comprida, por isso
+   "uber eats" vence "uber". Em empate, ganha a primeira categoria pela ordem da lista. */
 function categorize(t){
   if(state.overrides[t.id]) return state.overrides[t.id];
-  const d = " "+norm(t.desc)+" ";
-  for(const r of RULES){ for(const kw of r.kws){ if(d.includes(kw)){ if(r.k==="Rendimentos" && t.amount<0) continue; return r.k; } } }
-  return t.amount>0 ? "Rendimentos" : "Outros";
+  const d=" "+clean(t.desc)+" ", mine=new Set(state.mine||[]); let best=null, score=0;
+  for(const r of RULES){
+    if(r.k==="Rendimentos" && t.amount<0) continue;
+    for(const kw of r.kws){ const s=kw.length+(mine.has(kw)?1000:0); if(s>score && d.includes(" "+kw)){ best=r.k; score=s; } }
+  }
+  return best || (t.amount>0 ? "Rendimentos" : "Outros");
 }
 
 /* ---------- leitura de ficheiros ---------- */
@@ -758,6 +791,7 @@ $("restoreFile").onchange=async e=>{
   const {added,dup}=mergeTx(data.tx||[]);
   Object.assign(state.overrides, data.overrides||{});
   if(data.rules) for(const k in data.rules){ const mine=new Set(String(state.rules[k]||"").split(",").map(s=>s.trim()).filter(Boolean)); String(data.rules[k]).split(",").map(s=>s.trim()).filter(Boolean).forEach(x=>mine.add(x)); state.rules[k]=[...mine].join(", "); }
+  if(data.mine) state.mine=[...new Set([...(state.mine||[]), ...data.mine])];
   await save(); period=latestMonth(); renderRules(); render();
   toast(`Cópia restaurada: ${added} movimentos novos`+(dup?`, ${dup} já existiam`:"")+".");
 };
@@ -871,15 +905,19 @@ function renderTable(cur){
     s.onchange=async()=>{ state.overrides[t.id]=s.value; await save(); render(); offerRule(t,s.value); }; });
   $("more").hidden=rows.length<=showN;
 }
+// As duas primeiras palavras seguidas que identificam o comerciante ou a pessoa (sem códigos nem números).
 function keyword(desc){
-  const stop=["compra","pag","pagamento","trf","mov","cartao","debito","credito","lda","unipessoal","lisboa","porto","oeiras"];
-  return norm(desc).replace(/[^a-z0-9 &.]/g," ").split(" ").filter(w=>w.length>2&&!/^\d+$/.test(w)&&!stop.includes(w)).slice(0,2).join(" ");
+  const stop=["compra","pag","pagamento","trf","imediata","intrab","benef","diferentes","ips","mov","cartao","debito","credito","valor","tran","lda","unipessoal","lisboa","porto","oeiras"];
+  const w=clean(desc).split(" "), ok=x=>x.length>2 && !/\d/.test(x) && !stop.includes(x);
+  const i=w.findIndex(ok); if(i<0) return "";
+  return ok(w[i+1]||"") ? w[i]+" "+w[i+1] : w[i];
 }
 function offerRule(t,cat){
   const kw=keyword(t.desc); if(!kw) return;
   toast(`Aplicar “${cat}” a tudo com “${kw}”?`,"Criar regra",async()=>{
-    for(const c of CATS) state.rules[c.k]=String(state.rules[c.k]||"").split(",").map(s=>s.trim()).filter(s=>s&&norm(s)!==kw).join(", ");
+    for(const c of CATS) state.rules[c.k]=splitKw(state.rules[c.k]).filter(s=>clean(s)!==kw).join(", ");
     state.rules[cat]=kw+(state.rules[cat]?", "+state.rules[cat]:"");
+    state.mine=[...new Set([...(state.mine||[]), kw])];
     await save(); renderRules(); render(); toast(`Regra criada: “${kw}” → ${cat}.`);
   });
 }
@@ -905,7 +943,7 @@ $("more").onclick=()=>{ showN+=100; render(); };
 $("loadSample").onclick=async()=>{ state.tx=sampleData(); state.sample=true; await save(); period=latestMonth(); render(); };
 $("clearSample").onclick=async()=>{ state.tx=[]; state.overrides={}; state.sample=false; await save(); period="all"; render(); toast("Exemplo removido."); };
 $("saveRules").onclick=async()=>{ document.querySelectorAll("#rulegrid textarea").forEach(t=>state.rules[t.dataset.k]=t.value); await save(); render(); toast("Regras guardadas e aplicadas."); };
-$("resetRules").onclick=async()=>{ state.rules=defaultRules(); await save(); renderRules(); render(); toast("Regras repostas."); };
+$("resetRules").onclick=async()=>{ state.rules=defaultRules(); state.mine=[]; state.rulesV=RULES_V; await save(); renderRules(); render(); toast("Regras repostas."); };
 [["fileCA","dropCA","ca"],["fileCF","dropCF","cf"]].forEach(([fi,dz,src])=>{
   $(fi).onchange=e=>{ importFiles([...e.target.files],src); e.target.value=""; };
   const d=$(dz);
