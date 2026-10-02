@@ -85,6 +85,7 @@ button:disabled{opacity:.55;cursor:default}
 /* o campo de ficheiro fica invisível por cima do botão: o Safari (sobretudo nas apps da Dock) nem sempre abre o seletor a partir de um campo com display:none */
 .drop input{position:absolute;inset:0;width:100%;height:100%;margin:0;opacity:0;cursor:pointer;font-size:0}
 .ca{--src:var(--accent)} .cf{--src:var(--accent-2)}
+.catrow{display:flex;align-items:center;gap:10px;padding:7px 0;border-top:1px solid var(--line)} .catrow:first-child{border-top:0} .catrow .sw{width:12px;height:12px;border-radius:3px;flex:none} .catrow .nm{flex:1;min-width:0;overflow-wrap:anywhere} .catrow .ov{margin-left:6px}
 .imp{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:8px 0;border-top:1px solid var(--line)} .imp:first-child{border-top:0} .imp small{display:block;color:var(--muted);word-break:break-all}
 .prompt{margin:0;padding:10px 12px;border-radius:8px;background:var(--chip);color:var(--fg);font-family:var(--mono);font-size:12px;line-height:1.5;white-space:pre-wrap;word-break:break-word;user-select:text;-webkit-user-select:text}
 /* No Mac (rato) a importação faz-se a arrastar: na app da Dock o clique não abre o seletor de ficheiros.
@@ -277,6 +278,12 @@ dialog p{margin:0;color:var(--muted);font-size:.9rem}
       <div id="impList"></div>
     </details>
     <details class="rules">
+      <summary>Categorias</summary>
+      <p class="help">Podes criar categorias e mudar o nome de qualquer uma; as regras e as escolhas manuais acompanham o nome novo. As de origem não se apagam. Três têm um papel especial que se mantém com qualquer nome: a de entradas sem regra (Rendimentos), a de despesas sem regra (Outros) e a que fica fora dos totais (Transferências).</p>
+      <div id="catList"></div>
+      <div class="filters" style="margin-top:10px"><button class="primary" type="button" id="newCat">Nova categoria</button></div>
+    </details>
+    <details class="rules">
       <summary>Regras de categorização</summary>
       <p class="help">Cada categoria tem palavras-chave separadas por vírgulas. Cada palavra-chave tem de aparecer no início de uma palavra da descrição; maiúsculas, acentos e símbolos não contam. Se várias baterem certo, ganha a mais comprida (por isso "TRF RENDA" cai em Casa e "UBER EATS" em Restauração, não em Transportes); em empate, ganha a primeira categoria pela ordem abaixo. As regras que crias a partir de um movimento ganham sempre. Transferências enviadas a pessoas contam como despesa (MB WAY / Pessoas) e as recebidas como rendimento; só as transferências entre contas tuas (Revolut, XTB…) ficam fora dos totais. Quando mudas a categoria de um movimento na tabela, podes criar uma regra a partir dele.</p>
       <div class="rulegrid" id="rulegrid"></div>
@@ -436,7 +443,7 @@ $("authForm").addEventListener("submit", async e=>{
       const meta = {user, salt:b64(salt), iter:ITER};
       const key = await deriveKey(pass, salt, ITER);
       session = {key, meta};
-      state = {tx:[], overrides:{}, rules:defaultRules(), rulesV:RULES_V, sample:false};
+      state = {tx:[], overrides:{}, rules:defaultRules(), rulesV:RULES_V, cats:defaultCats(), sample:false};
       await save();
       try{ navigator.storage && navigator.storage.persist && navigator.storage.persist(); }catch(e){}
       startApp();
@@ -451,8 +458,7 @@ $("authForm").addEventListener("submit", async e=>{
         err.textContent="Username ou password errados."; $("pass").select(); return;
       }
       failures=0; session={key, meta:{user:v.user, salt:v.salt, iter:v.iter}}; state=data;
-      state.rules = Object.assign(defaultRules(), state.rules||{});
-      if((state.rulesV||1)<RULES_V){ upgradeRules(); save(); }
+      if(!state.cats){ state.rules = Object.assign(defaultRules(), state.rules||{}); if((state.rulesV||1)<RULES_V) upgradeRules(); state.cats=defaultCats(); save(); }
       startApp();
     }
   } catch(ex){
@@ -525,8 +531,17 @@ const CATS = [
   {k:"Transferências", c:"#8a95a0", kw:"trf, transf, transferencia, sepa, trf.p/, trf de, trf para"},
   {k:"Outros", c:"#9aa39c", kw:""}
 ];
-const EXCLUDED = new Set(["Transferências"]);
-const COLOR = Object.fromEntries(CATS.map(c=>[c.k,c.c]));
+/* Cada conta tem a sua lista de categorias (state.cats), criada a partir de CATS. O nome pode mudar;
+   o papel das três especiais fica: "income" recebe entradas sem regra (e as regras dela só valem para
+   entradas), "other" recebe despesas sem regra, "transfer" fica fora dos totais. "orig" guarda o nome
+   de origem, para "Repor regras de origem" funcionar depois de mudar nomes. */
+const ROLE_OF = {"Rendimentos":"income", "Transferências":"transfer", "Outros":"other"};
+const NEW_COLORS = ["#a0522d","#2f8f9d","#8e5bb0","#b8962e","#5d7fa3","#c06c3e","#6a8e23","#d1495b"];
+function defaultCats(){ return CATS.map(c=>({k:c.k, c:c.c, orig:c.k, ...(ROLE_OF[c.k]?{role:ROLE_OF[c.k]}:{})})); }
+const cats = () => state && state.cats || defaultCats();
+const catByRole = role => cats().find(c=>c.role===role).k;
+const isExcl = k => cats().some(c=>c.k===k && c.role==="transfer");
+const colorOf = k => (cats().find(c=>c.k===k)||{}).c;
 /* Palavras-chave acrescentadas depois da primeira versão. Contas antigas recebem-nas uma vez,
    ao abrir; não voltam a ser acrescentadas se as apagares. Transferências de e para pessoas
    contam: as enviadas em "MB WAY / Pessoas", as recebidas em Rendimentos. */
@@ -564,7 +579,7 @@ const ymLabel = (k,long) => { const [y,m]=k.split("-"); return long? `${MESL[+m-
 const esc = s => String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 
 let RULES = [];
-function compiledRules(){ return CATS.map(c=>({k:c.k, kws:splitKw(state.rules[c.k]).map(clean).filter(Boolean)})); }
+function compiledRules(){ return cats().map(c=>({k:c.k, role:c.role, kws:splitKw(state.rules[c.k]).map(clean).filter(Boolean)})); }
 /* Descrição e palavras-chave são limpas da mesma maneira (sem acentos nem símbolos) e cada
    palavra-chave tem de começar no início de uma palavra. As regras criadas a partir de um
    movimento ("Criar regra") ganham sempre; entre as restantes ganha a mais comprida, por isso
@@ -573,10 +588,10 @@ function categorize(t){
   if(state.overrides[t.id]) return state.overrides[t.id];
   const d=" "+clean(t.desc)+" ", mine=new Set(state.mine||[]); let best=null, score=0;
   for(const r of RULES){
-    if(r.k==="Rendimentos" && t.amount<0) continue;
+    if(r.role==="income" && t.amount<0) continue;
     for(const kw of r.kws){ const s=kw.length+(mine.has(kw)?1000:0); if(s>score && d.includes(" "+kw)){ best=r.k; score=s; } }
   }
-  return best || (t.amount>0 ? "Rendimentos" : "Outros");
+  return best || catByRole(t.amount>0 ? "income" : "other");
 }
 
 /* ---------- leitura de ficheiros ---------- */
@@ -870,6 +885,7 @@ $("restoreFile").onchange=async e=>{
   Object.assign(state.overrides, data.overrides||{});
   if(data.rules) for(const k in data.rules){ const mine=new Set(String(state.rules[k]||"").split(",").map(s=>s.trim()).filter(Boolean)); String(data.rules[k]).split(",").map(s=>s.trim()).filter(Boolean).forEach(x=>mine.add(x)); state.rules[k]=[...mine].join(", "); }
   if(data.imports){ const have=new Set((state.imports||[]).map(i=>i.id)); state.imports=[...(state.imports||[]), ...data.imports.filter(i=>!have.has(i.id))]; }
+  if(data.cats){ const have=new Set(cats().map(c=>c.k)); const other=state.cats.findIndex(c=>c.role==="other"); state.cats.splice(other<0?state.cats.length:other, 0, ...data.cats.filter(c=>!have.has(c.k) && !c.role).map(({k,c})=>({k,c}))); }
   if(data.notes) state.notes=Object.assign({}, data.notes, state.notes||{});
   if(data.mine) state.mine=[...new Set([...(state.mine||[]), ...data.mine])];
   await save(); period=latestMonth(); renderRules(); render();
@@ -916,13 +932,13 @@ function render(){
   if(period!=="all" && !months.includes(period)) period=months[months.length-1]||"all";
   ps.value=period;
   const cur=tx.filter(t=>period==="all"||t.m===period);
-  const counted=cur.filter(t=>!EXCLUDED.has(t.cat));
+  const counted=cur.filter(t=>!isExcl(t.cat));
   const exp=-counted.filter(t=>t.amount<0).reduce((s,t)=>s+t.amount,0);
   const inc=counted.filter(t=>t.amount>0).reduce((s,t)=>s+t.amount,0);
   const meal=-cur.filter(t=>t.source==="cf"&&t.amount<0).reduce((s,t)=>s+t.amount,0);
   const mealIn=cur.filter(t=>t.source==="cf"&&t.amount>0).reduce((s,t)=>s+t.amount,0);
   let prevExp=null;
-  if(period!=="all"){ const i=months.indexOf(period); if(i>0){ const pm=months[i-1]; prevExp=-tx.filter(t=>t.m===pm&&!EXCLUDED.has(t.cat)&&t.amount<0).reduce((s,t)=>s+t.amount,0); } }
+  if(period!=="all"){ const i=months.indexOf(period); if(i>0){ const pm=months[i-1]; prevExp=-tx.filter(t=>t.m===pm&&!isExcl(t.cat)&&t.amount<0).reduce((s,t)=>s+t.amount,0); } }
   const delta=prevExp? (exp-prevExp)/prevExp*100 : null;
   $("kpis").innerHTML=[
     ["Despesas", fmt(exp), delta===null? (period==="all"?`${months.length} ${months.length===1?"mês":"meses"}`:"sem mês anterior") : `<span class="${delta>0?'up':'down'}">${delta>0?'+':''}${delta.toFixed(0)}%</span> vs mês anterior`],
@@ -934,7 +950,7 @@ function render(){
 }
 function niceStep(max){ const raw=max/3, p=Math.pow(10,Math.floor(Math.log10(raw||1))), n=raw/p; return (n<=1?1:n<=2?2:n<=2.5?2.5:n<=5?5:10)*p; }
 function renderChart(tx,months){
-  const data=months.slice(-12).map(m=>{ const r=tx.filter(t=>t.m===m&&!EXCLUDED.has(t.cat));
+  const data=months.slice(-12).map(m=>{ const r=tx.filter(t=>t.m===m&&!isExcl(t.cat));
     return {m, ca:-r.filter(t=>t.source==="ca"&&t.amount<0).reduce((s,t)=>s+t.amount,0), cf:-r.filter(t=>t.source==="cf"&&t.amount<0).reduce((s,t)=>s+t.amount,0), inc:r.filter(t=>t.amount>0).reduce((s,t)=>s+t.amount,0)}; });
   const el=$("chart");
   if(!data.length){ el.innerHTML=`<div class="empty" style="width:100%;align-self:center">O gráfico aparece quando importares movimentos.</div>`; return; }
@@ -947,11 +963,11 @@ function renderChart(tx,months){
 }
 function renderCats(cur,tx,months){
   $("catPeriod").textContent= period==="all"? "todos os meses" : ymLabel(period,true);
-  const sums={}; cur.filter(t=>t.amount<0&&!EXCLUDED.has(t.cat)).forEach(t=>sums[t.cat]=(sums[t.cat]||0)-t.amount);
+  const sums={}; cur.filter(t=>t.amount<0&&!isExcl(t.cat)).forEach(t=>sums[t.cat]=(sums[t.cat]||0)-t.amount);
   const total=Object.values(sums).reduce((a,b)=>a+b,0);
   const avg={};
   if(period!=="all"){ const i=months.indexOf(period), prev=months.slice(Math.max(0,i-3),i);
-    if(prev.length) tx.filter(t=>prev.includes(t.m)&&t.amount<0&&!EXCLUDED.has(t.cat)).forEach(t=>avg[t.cat]=(avg[t.cat]||0)-t.amount/prev.length); }
+    if(prev.length) tx.filter(t=>prev.includes(t.m)&&t.amount<0&&!isExcl(t.cat)).forEach(t=>avg[t.cat]=(avg[t.cat]||0)-t.amount/prev.length); }
   const list=Object.entries(sums).sort((a,b)=>b[1]-a[1]);
   if(!list.length){ $("cats").innerHTML=`<div class="empty">Sem despesas neste período.</div>`; return; }
   const max=list[0][1];
@@ -960,20 +976,20 @@ function renderCats(cur,tx,months){
     if(a>0){ const p=(v-a)/a*100; if(Math.abs(p)>=5) cmp=`<span class="${p>0?'up':'down'}">${p>0?'▲':'▼'} ${Math.abs(p).toFixed(0)}% vs média 3 meses</span>`; }
     else if(period!=="all" && Object.keys(avg).length) cmp=`<span>novo este mês</span>`;
     return `<div class="cat ${catFilter===k?'active':''}" data-k="${esc(k)}" role="button" tabindex="0"><span class="n">${esc(k)}</span><span class="a num">${fmt(v)}</span>
-      <div class="bar"><div style="width:${v/max*100}%;background:${COLOR[k]||'var(--muted)'}"></div></div>
+      <div class="bar"><div style="width:${v/max*100}%;background:${colorOf(k)||'var(--muted)'}"></div></div>
       <div class="meta"><span class="num">${(v/total*100).toFixed(1)}%</span>${cmp}</div></div>`;
   }).join("");
   $("cats").querySelectorAll(".cat").forEach(c=>{ const go=()=>{ catFilter=catFilter===c.dataset.k?"":c.dataset.k; showN=60; render(); }; c.onclick=go; c.onkeydown=e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); go(); } }; });
 }
 function renderTable(cur){
   const fc=$("fCat");
-  fc.innerHTML=`<option value="">Todas as categorias</option>`+CATS.map(c=>`<option>${esc(c.k)}</option>`).join("");
+  fc.innerHTML=`<option value="">Todas as categorias</option>`+cats().map(c=>`<option>${esc(c.k)}</option>`).join("");
   fc.value=catFilter;
   const q=norm($("q").value), src=$("fSrc").value, notes=state.notes||{};
   const rows=cur.filter(t=>(!catFilter||t.cat===catFilter)&&(!src||t.source===src)&&(!q||norm(t.desc).includes(q)||norm(notes[t.id]).includes(q))).sort((a,b)=>b.date.localeCompare(a.date)||a.amount-b.amount);
   shownRows=rows; $("delShown").hidden=!rows.length || state.sample;
   $("count").textContent=`${rows.length} movimentos · ${fmt(rows.reduce((s,t)=>s+t.amount,0))}`;
-  const opts=CATS.map(c=>`<option>${esc(c.k)}</option>`).join("");
+  const opts=cats().map(c=>`<option>${esc(c.k)}</option>`).join("");
   const shown=rows.slice(0,showN);
   $("rows").innerHTML= rows.length? shown.map((t,i)=>`<tr>
     <td class="num">${t.date.split("-").reverse().join("/")}</td>
@@ -1029,14 +1045,59 @@ function keyword(desc){
 function offerRule(t,cat){
   const kw=keyword(t.desc); if(!kw) return;
   toast(`Aplicar “${cat}” a tudo com “${kw}”?`,"Criar regra",async()=>{
-    for(const c of CATS) state.rules[c.k]=splitKw(state.rules[c.k]).filter(s=>clean(s)!==kw).join(", ");
+    for(const c of cats()) state.rules[c.k]=splitKw(state.rules[c.k]).filter(s=>clean(s)!==kw).join(", ");
     state.rules[cat]=kw+(state.rules[cat]?", "+state.rules[cat]:"");
     state.mine=[...new Set([...(state.mine||[]), kw])];
     await save(); renderRules(); render(); toast(`Regra criada: “${kw}” → ${cat}.`);
   });
 }
+const ROLE_LABEL={income:"entradas sem regra", other:"despesas sem regra", transfer:"fora dos totais"};
+function catName(v, except){
+  const n=String(v||"").replace(/\s+/g," ").trim();
+  if(!n) return {err:"Escreve um nome."};
+  if(n.length>40) return {err:"Usa no máximo 40 caracteres."};
+  if(cats().some(c=>c.k!==except && norm(c.k)===norm(n))) return {err:"Já existe uma categoria com esse nome."};
+  return {n};
+}
+function renameCat(old, n){
+  const c=state.cats.find(c=>c.k===old); c.k=n;
+  state.rules[n]=state.rules[old]||""; delete state.rules[old];
+  for(const id in state.overrides) if(state.overrides[id]===old) state.overrides[id]=n;
+  if(catFilter===old) catFilter=n;
+}
+function renderCats(){
+  $("catList").innerHTML=cats().map((c,i)=>`<div class="catrow"><i class="sw" style="background:${c.c}"></i><span class="nm">${esc(c.k)}${c.role?`<span class="ov">(${ROLE_LABEL[c.role]})</span>`:""}</span>
+    <button type="button" data-ren="${i}">Mudar nome</button>${c.orig?"":`<button type="button" class="danger" data-del="${i}">Apagar</button>`}</div>`).join("");
+  $("catList").querySelectorAll("button[data-ren]").forEach(b=>b.onclick=async()=>{
+    const c=cats()[+b.dataset.ren], old=c.k; let n;
+    const v=await ask({title:"Mudar nome da categoria", text:`“${old}”`, input:true, type:"text", label:"Nome novo", value:old, maxlength:40, ok:"Guardar",
+      validate:v=>{ const r=catName(v,old); n=r.n; return r.err||""; }});
+    if(v===null || n===old) return;
+    renameCat(old,n); await save(); renderRules(); render(); toast(`“${old}” passou a chamar-se “${n}”.`);
+  });
+  $("catList").querySelectorAll("button[data-del]").forEach(b=>b.onclick=async()=>{
+    const c=cats()[+b.dataset.del], used=Object.values(state.overrides).filter(v=>v===c.k).length;
+    const ok=await ask({title:`Apagar “${c.k}”?`, text:"As palavras-chave dela saem"+(used?` e ${used} movimento${used>1?"s":""} que lhe atribuíste à mão volta${used>1?"m":""} a ser categorizado${used>1?"s":""} pelas regras`:"")+". Os movimentos não são apagados.", ok:"Apagar", danger:true});
+    if(!ok) return;
+    state.cats=state.cats.filter(x=>x!==c); delete state.rules[c.k];
+    for(const id in state.overrides) if(state.overrides[id]===c.k) delete state.overrides[id];
+    if(catFilter===c.k) catFilter="";
+    await save(); renderRules(); render(); toast(`Categoria “${c.k}” apagada.`);
+  });
+}
+$("newCat").onclick=async()=>{
+  let n;
+  const v=await ask({title:"Nova categoria", text:"Depois, acrescenta-lhe palavras-chave em Regras de categorização, ou escolhe-a num movimento e cria uma regra a partir dele.", input:true, type:"text", label:"Nome", maxlength:40, ok:"Criar",
+    validate:v=>{ const r=catName(v); n=r.n; return r.err||""; }});
+  if(v===null) return;
+  const used=new Set(cats().map(c=>c.c)), color=NEW_COLORS.find(c=>!used.has(c))||NEW_COLORS[state.cats.length%NEW_COLORS.length];
+  const at=state.cats.findIndex(c=>c.role==="transfer"); // antes de Transferências e Outros
+  state.cats.splice(at<0?state.cats.length:at, 0, {k:n, c:color}); state.rules[n]="";
+  await save(); renderRules(); render(); toast(`Categoria “${n}” criada.`);
+};
 function renderRules(){
-  $("rulegrid").innerHTML=CATS.filter(c=>c.k!=="Outros").map((c,i)=>`<label for="r${i}"><span><i style="display:inline-block;width:9px;height:9px;border-radius:2px;background:${c.c};margin-right:6px"></i>${esc(c.k)}${EXCLUDED.has(c.k)?' <span class="ov">(fora dos totais)</span>':''}</span><textarea id="r${i}" data-k="${esc(c.k)}">${esc(state.rules[c.k]||"")}</textarea></label>`).join("");
+  renderCats();
+  $("rulegrid").innerHTML=cats().filter(c=>c.role!=="other").map((c,i)=>`<label for="r${i}"><span><i style="display:inline-block;width:9px;height:9px;border-radius:2px;background:${c.c};margin-right:6px"></i>${esc(c.k)}${isExcl(c.k)?' <span class="ov">(fora dos totais)</span>':''}</span><textarea id="r${i}" data-k="${esc(c.k)}">${esc(state.rules[c.k]||"")}</textarea></label>`).join("");
 }
 let toastTimer;
 function toast(msg,actionLabel,action){
@@ -1059,7 +1120,7 @@ $("more").onclick=()=>{ showN+=100; render(); };
 $("addBtn").onclick=()=>{
   const n=new Date();
   $("aDate").value=iso(n.getFullYear(),n.getMonth()+1,n.getDate()); $("aAmt").value=""; $("aDesc").value=""; $("aNote").value=""; $("aErr").textContent="";
-  $("aCat").innerHTML=`<option value="">Automática (pelas regras)</option>`+CATS.map(c=>`<option>${esc(c.k)}</option>`).join("");
+  $("aCat").innerHTML=`<option value="">Automática (pelas regras)</option>`+cats().map(c=>`<option>${esc(c.k)}</option>`).join("");
   $("aSrc").value=$("fSrc").value||"ca";
   $("addDlg").showModal(); $("aDesc").focus();
 };
@@ -1107,7 +1168,7 @@ $("copyCfPrompt").onclick=async()=>{
 $("loadSample").onclick=async()=>{ state.tx=sampleData(); state.sample=true; await save(); period=latestMonth(); render(); };
 $("clearSample").onclick=async()=>{ state.tx=[]; state.overrides={}; state.sample=false; await save(); period="all"; render(); toast("Exemplo removido."); };
 $("saveRules").onclick=async()=>{ document.querySelectorAll("#rulegrid textarea").forEach(t=>state.rules[t.dataset.k]=t.value); await save(); render(); toast("Regras guardadas e aplicadas."); };
-$("resetRules").onclick=async()=>{ state.rules=defaultRules(); state.mine=[]; state.rulesV=RULES_V; await save(); renderRules(); render(); toast("Regras repostas."); };
+$("resetRules").onclick=async()=>{ const d=defaultRules(); state.rules=Object.fromEntries(cats().map(c=>[c.k, c.orig?d[c.orig]||"":""])); state.mine=[]; state.rulesV=RULES_V; await save(); renderRules(); render(); toast("Regras repostas."); };
 [["fileCA","dropCA","ca"],["fileCF","dropCF","cf"]].forEach(([fi,dz,src])=>{
   $(fi).onchange=e=>{ importFiles([...e.target.files],src); e.target.value=""; };
   const d=$(dz);

@@ -37,6 +37,7 @@ Na app da Dock, clicar nas caixas de importação não abre a janela para escolh
 - Importar o mesmo período duas vezes não duplica movimentos.
 - **Movimentos à mão:** na tabela de movimentos, **Adicionar movimento** (por exemplo, despesas pagas em dinheiro).
 - **Comentários:** o ✎ de cada linha escreve ou edita um comentário, que aparece por baixo da descrição. A pesquisa também procura nos comentários, e voltar a importar um ficheiro não os apaga.
+- **Categorias:** na secção **Categorias** (em baixo) podes criar categorias novas e mudar o nome de qualquer uma; as regras e as categorias escolhidas à mão acompanham o nome novo. Só as categorias que criaste podem ser apagadas.
 - **Apagar:** o ✕ de cada linha apaga esse movimento. **Importações** (em baixo) lista cada importação com um botão para a apagar. **Apagar estes movimentos** apaga tudo o que a tabela está a mostrar com os filtros atuais; com "Todos os meses" e sem filtros, apaga todos os movimentos e mantém a conta e as regras.
 
 ## 5. Passar dados entre o Mac e o iPhone
