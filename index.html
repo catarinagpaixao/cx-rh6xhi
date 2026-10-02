@@ -210,12 +210,12 @@ dialog p{margin:0;color:var(--muted);font-size:.9rem}
   <section class="imports">
     <label class="drop ca" id="dropCA">
       <span class="dot">CA</span>
-      <span><b>Importar extrato Crédito Agrícola</b><small>PDF do extrato mensal (Extracto Integrado)</small></span>
+      <span><b>Importar extrato Crédito Agrícola</b><small>Arrasta para aqui o PDF do extrato mensal, ou clica para escolher</small></span>
       <input type="file" id="fileCA" accept=".pdf,application/pdf,.csv,.txt,.xls,.xlsx,text/csv" multiple>
     </label>
     <label class="drop cf" id="dropCF">
       <span class="dot">CF</span>
-      <span><b>Importar movimentos Coverflex</b><small>CSV exportado da Coverflex</small></span>
+      <span><b>Importar movimentos Coverflex</b><small>Arrasta para aqui o CSV exportado da Coverflex, ou clica para escolher</small></span>
       <input type="file" id="fileCF" accept=".csv,.txt,.xls,.xlsx,text/csv" multiple>
     </label>
   </section>
@@ -951,6 +951,13 @@ $("resetRules").onclick=async()=>{ state.rules=defaultRules(); state.mine=[]; st
   d.ondragover=e=>{ e.preventDefault(); d.classList.add("over"); };
   d.ondragleave=()=>d.classList.remove("over");
   d.ondrop=e=>{ e.preventDefault(); d.classList.remove("over"); importFiles([...e.dataTransfer.files],src); };
+});
+// Ficheiros copiados no Finder (⌘C) e colados na app (⌘V). Nas apps da Dock o Safari não abre o seletor de
+// ficheiros, por isso arrastar e colar são as alternativas. O PDF do CA e o CSV da Coverflex são reconhecidos pelo conteúdo.
+document.addEventListener("paste",e=>{
+  const files=[...((e.clipboardData&&e.clipboardData.files)||[])];
+  if(!session || !files.length) return;
+  e.preventDefault(); importFiles(files,"ca");
 });
 
 function sampleData(){

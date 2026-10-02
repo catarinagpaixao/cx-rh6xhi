@@ -28,6 +28,8 @@ Importante: a app instalada e o Safari guardam dados em sítios separados. Usa s
 2. Menu **Ficheiro → Adicionar à Dock**.
 3. Abre a app pela Dock e cria a conta.
 
+Na app da Dock, clicar nas caixas de importação não abre a janela para escolher ficheiros (limitação do Safari nestas apps). Arrasta o ficheiro do Finder para a caixa, ou copia-o no Finder (⌘C) e cola-o na app (⌘V).
+
 ## 4. Uso mensal
 
 - **Crédito Agrícola:** importa na caixa "CA" o PDF do extrato mensal (Extracto Integrado) que recebes do banco. A app confere os movimentos com o saldo inicial e final do extrato; se não baterem certo, não importa nada. CSV ou Excel do CA Online continuam a funcionar.
