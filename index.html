@@ -140,6 +140,7 @@ button:disabled{opacity:.55;cursor:default}
 .dl{display:grid;grid-template-columns:10px minmax(0,1fr) 3.2em;gap:7px;align-items:center;cursor:pointer;transition:opacity .15s}
 .dl i{width:10px;height:10px;border-radius:2px} .dl .n{overflow:hidden;text-overflow:ellipsis;white-space:nowrap} .dl .p{color:var(--muted);text-align:right}
 .dim{opacity:.3}
+.chipx{padding:0 6px;margin-left:4px;font-size:.72rem;line-height:1.5;color:var(--muted);vertical-align:1px}
 .top5{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:9px}
 .top5 li{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:1px 10px;font-size:.85rem}
 .top5 .d{overflow:hidden;text-overflow:ellipsis;white-space:nowrap} .top5 small{color:var(--muted);font-size:.74rem} .top5 .a{text-align:right}
@@ -272,7 +273,7 @@ dialog p{margin:0;color:var(--muted);font-size:.9rem}
       <div class="subviz">
         <div class="sub"><h3>Distribuição das despesas <span class="perlbl"></span></h3>
           <div class="donutwrap"><svg id="donut" viewBox="0 0 120 120" role="img" aria-label="Distribuição das despesas por categoria"></svg><div class="dlegend" id="dlegend"></div></div></div>
-        <div class="sub"><h3>Top 5 despesas <span class="perlbl"></span></h3><ol class="top5" id="top5"></ol></div>
+        <div class="sub"><h3>Top 5 despesas<span id="top5cat"></span> <span class="perlbl"></span></h3><ol class="top5" id="top5"></ol></div>
       </div>
     </div>
     <div class="panel">
@@ -1026,16 +1027,21 @@ function renderDonut(cur){
   leg.innerHTML=slices.map(s=>`<div class="dl" data-k="${esc(s.k)}" role="button" tabindex="0" title="${esc(s.label||s.k)}: ${fmt(s.v)}"><i style="background:${s.c}"></i><span class="n">${esc(s.label||s.k)}</span><span class="p num">${(s.v/total*100).toFixed(0)}%</span></div>`).join("");
   // passar o rato por uma fatia ou linha da legenda destaca as duas; clicar filtra como a lista
   const marks=[...svg.querySelectorAll("circle[data-k]"), ...leg.querySelectorAll(".dl")];
-  const hi=k=>marks.forEach(m=>m.classList.toggle("dim", k!==null && m.dataset.k!==k));
+  const base= catFilter && slices.some(s=>s.k===catFilter) ? catFilter : null; // categoria escolhida fica destacada
+  const hi=k=>{ const on=k??base; marks.forEach(m=>m.classList.toggle("dim", on!==null && m.dataset.k!==on)); };
+  hi(null);
   marks.forEach(m=>{ const k=m.dataset.k;
     m.onmouseenter=()=>hi(k); m.onmouseleave=()=>hi(null);
     const go=()=>{ if(!k) return; catFilter=catFilter===k?"":k; showN=60; render(); };
     m.onclick=go; m.onkeydown=e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); go(); } }; });
 }
+// Com uma categoria escolhida (na lista, no donut ou no filtro da tabela), mostra só as dessa categoria.
 function renderTop5(cur){
-  const top=cur.filter(t=>t.amount<0&&!isExcl(t.cat)).sort((a,b)=>a.amount-b.amount).slice(0,5);
+  const top=cur.filter(t=>t.amount<0&&(catFilter? t.cat===catFilter : !isExcl(t.cat))).sort((a,b)=>a.amount-b.amount).slice(0,5);
+  $("top5cat").innerHTML= catFilter ? ` · ${esc(catFilter)} <button type="button" class="chipx" id="top5clear" title="Mostrar todas as categorias" aria-label="Mostrar todas as categorias">✕</button>` : "";
+  if(catFilter) $("top5clear").onclick=()=>{ catFilter=""; showN=60; render(); };
   $("top5").innerHTML= top.length ? top.map(t=>`<li><span class="d">${esc(t.desc)}</span><span class="a num">${fmt(t.amount)}</span><small>${t.date.split("-").reverse().join("/")} · <i style="display:inline-block;width:8px;height:8px;border-radius:2px;background:${colorOf(t.cat)||"var(--muted)"};margin-right:4px"></i>${esc(t.cat)}</small></li>`).join("")
-    : `<li class="empty" style="padding:0">Sem despesas neste período.</li>`;
+    : `<li class="empty" style="padding:0">Sem despesas${catFilter?` em ${esc(catFilter)}`:""} neste período.</li>`;
 }
 function renderCats(cur,tx,months){
   $("catPeriod").textContent= period==="all"? "todos os meses" : ymLabel(period,true);
