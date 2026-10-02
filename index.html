@@ -770,11 +770,11 @@ function coverflexToTx(rows, known){
   const all=[...mine.values()].filter(m=>m.bal!==undefined).sort((a,b)=>a.ts<b.ts?-1:a.ts>b.ts?1:0);
   // Um bloco vai de um carregamento ao seguinte. Se o saldo sobe mais do que uma reordenação de
   // liquidações explica, faltou a linha de um carregamento: começa um bloco sem saldo anterior conhecido.
-  const segs=[]; let cur=[], last=null;
+  const segs=[], gaps=[]; let cur=[], last=null;
   for(const m of all){
     const gap=!m.up && last && m.bal-last.bal>CF_MISSING_TOPUP;
     if((m.up||gap) && cur.length){ segs.push(cur); cur=[]; }
-    if(gap) cur.gap=true;
+    if(gap){ cur.gap=true; gaps.push(m); }
     cur.push(m); last=m;
   }
   if(cur.length) segs.push(cur);
@@ -792,7 +792,9 @@ function coverflexToTx(rows, known){
       else skipped++;
     }
   }
-  return {tx:fresh, updates, skipped};
+  // carregamentos em falta neste ficheiro: o salto de saldo cai num movimento novo
+  const missing=gaps.filter(m=>!m.old).map(m=>m.date);
+  return {tx:fresh, updates, skipped, missing};
 }
 
 function mergeTx(fresh){
@@ -811,10 +813,12 @@ async function importFiles(files, source){
       }
       const rows=await readFile(f);
       if(isCoverflexExport(rows)){
-        const {tx:cf, updates, skipped}=coverflexToTx(rows, [...state.tx, ...fresh]);
+        const {tx:cf, updates, skipped, missing}=coverflexToTx(rows, [...state.tx, ...fresh]);
         for(const u of updates){ const t=state.tx.find(x=>x.id===u.id)||fresh.find(x=>x.id===u.id); if(t){ t.amount=u.amount; fixed++; } }
         if(!cf.length && !skipped && !updates.length){ errs.push(`${f.name}: nenhum movimento novo.`); continue; }
-        if(skipped) errs.push(`${f.name}: ${skipped===1?"1 movimento ficou":skipped+" movimentos ficaram"} de fora por não ser possível calcular o valor (normalmente o primeiro do mês). Importa também o mês anterior e volta a importar este ficheiro para o apanhar.`);
+        if(missing.length) errs.push(`${f.name}: falta${missing.length>1?"m os carregamentos":" o carregamento"} da Coverflex antes de ${missing.map(d=>d.split("-").reverse().join("/")).join(", ")}, por isso ${missing.length>1?"a compra a seguir a cada um ficou":"a compra a seguir ficou"} de fora e o carregamento não foi registado. Pede o ficheiro outra vez ao assistente, a dizer que faltam os carregamentos, e importa-o de novo.`);
+        const other=skipped-missing.length;
+        if(other>0) errs.push(`${f.name}: ${other===1?"1 movimento ficou":other+" movimentos ficaram"} de fora por não ser possível calcular o valor (normalmente o primeiro do mês). Importa também o mês anterior e volta a importar este ficheiro para o apanhar.`);
         fresh.push(...cf);
         continue;
       }
@@ -1071,7 +1075,7 @@ $("delShown").onclick=async()=>{
 };
 function cfPromptText(k){
   const [y,m]=k.split("-").map(Number), last=new Date(y,m,0).getDate(), mes=MESL[m-1];
-  return `Gera um ficheiro CSV com todos os movimentos do meu saldo de refeição de ${mes} de ${y}, ou seja, de 1 a ${last} de ${mes} de ${y} (inclusive), incluindo carregamentos. Uma linha por movimento, sem linhas de totais. Usa vírgula como separador, ponto como separador decimal e esta linha de cabeçalho, exatamente assim:
+  return `Gera um ficheiro CSV com todos os movimentos do meu saldo de refeição de ${mes} de ${y}, ou seja, de 1 a ${last} de ${mes} de ${y} (inclusive). Inclui obrigatoriamente os carregamentos do saldo (operation_type topup, normalmente com a descrição Unknown), além das compras. Uma linha por movimento, sem linhas de totais. Usa vírgula como separador, ponto como separador decimal e esta linha de cabeçalho, exatamente assim:
 date_day,movement_id,status,operation_type,description,merchant_name,balance_after
 Em date_day põe a data e hora completas do movimento, com milissegundos, como aparecem nos teus dados (por exemplo ${y}-${String(m).padStart(2,"0")}-15T12:30:45.123). Em balance_after põe o saldo depois do movimento. Não calcules nem inventes valores: usa só os dados que tens.`;
 }
