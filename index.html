@@ -45,7 +45,7 @@ h2{font-size:1.15rem;font-weight:700}
 .label{font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600}
 header.top{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap}
 select,input,button,textarea{font:inherit;color:var(--fg)}
-select,input[type=search],input[type=text],input[type=password]{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:16px}
+select,input[type=search],input[type=text],input[type=password],input[type=date]{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:16px}
 button{cursor:pointer;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:7px 12px}
 button:hover{border-color:var(--muted)}
 button.primary{background:var(--accent);color:var(--bg);border-color:var(--accent);font-weight:600}
@@ -64,7 +64,14 @@ button:disabled{opacity:.55;cursor:default}
 .field input,.field select{width:100%}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 .addgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px} .addgrid .wide{grid-column:1/-1}
-.rowdel{padding:2px 7px;font-size:.8rem;color:var(--muted);background:transparent;border-color:transparent} .rowdel:hover{color:var(--neg);border-color:var(--line)}
+.rowdel{padding:3px 6px;font-size:.8rem;line-height:1;color:var(--muted);background:transparent;border-color:transparent;vertical-align:middle} .rowdel:hover{color:var(--fg);border-color:var(--line)} .rowdel[data-d]:hover{color:var(--neg)}
+.rowdel svg{display:block;width:15px;height:15px} .rowdel.has{color:var(--accent)} .rowdel.has[data-n] svg path{fill:color-mix(in srgb,var(--accent) 25%,transparent)}
+.part{display:inline-block;margin-left:6px;padding:0 6px;border-radius:6px;background:var(--chip);color:var(--muted);font-size:.7rem;vertical-align:1px}
+#splitDlg{width:min(600px,calc(100% - 32px))}
+.sprow{display:grid;grid-template-columns:minmax(0,1.4fr) 92px minmax(0,1fr) auto;gap:6px;align-items:center}
+.sprow input,.sprow select{width:100%;min-width:0}
+.sphead{font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+@media (max-width:520px){ .sprow{grid-template-columns:1fr 92px} .sprow .spdesc{grid-column:1/-1} .sphead{display:none} }
 .err{color:var(--neg);font-size:.86rem;min-height:1.2em}
 .meter{height:5px;border-radius:3px;background:var(--chip);overflow:hidden}
 .meter div{height:100%;width:0;transition:width .2s,background .2s}
@@ -345,6 +352,16 @@ dialog p{margin:0;color:var(--muted);font-size:.9rem}
   <div class="err" id="aErr"></div>
   <div class="filters" style="justify-content:flex-end"><button type="button" id="aCancel">Cancelar</button><button class="primary" type="submit">Adicionar</button></div>
 </form></dialog>
+<dialog id="splitDlg"><form method="dialog" id="splitForm" novalidate>
+  <h2>Dividir movimento</h2>
+  <p id="spInfo"></p>
+  <div class="sprow sphead"><span>Descrição</span><span>Valor (€)</span><span>Categoria</span><span></span></div>
+  <div id="spParts" style="display:flex;flex-direction:column;gap:8px"></div>
+  <div class="filters" style="justify-content:space-between;align-items:center"><button type="button" id="spAdd">+ Parte</button><span class="label num" id="spLeft"></span></div>
+  <p class="help" style="margin:0">Uma parte com o valor em branco fica com o que falta distribuir.</p>
+  <div class="err" id="spErr"></div>
+  <div class="filters" style="justify-content:space-between"><button type="button" class="danger" id="spUndo">Desfazer divisão</button><span style="display:flex;gap:8px;margin-left:auto"><button type="button" id="spCancel">Cancelar</button><button class="primary" type="submit">Guardar</button></span></div>
+</form></dialog>
 <div class="toast" id="toast" hidden></div>
 
 <script>
@@ -578,6 +595,10 @@ const ym = d => d.slice(0,7);
 const ymLabel = (k,long) => { const [y,m]=k.split("-"); return long? `${MESL[+m-1]} ${y}` : `${MES[+m-1]} ${y.slice(2)}`; };
 const esc = s => String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 
+const ICON={
+  note:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>',
+  split:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg>'
+};
 let RULES = [];
 function compiledRules(){ return cats().map(c=>({k:c.k, role:c.role, kws:splitKw(state.rules[c.k]).map(clean).filter(Boolean)})); }
 /* Descrição e palavras-chave são limpas da mesma maneira (sem acentos nem símbolos) e cada
@@ -886,6 +907,7 @@ $("restoreFile").onchange=async e=>{
   if(data.rules) for(const k in data.rules){ const mine=new Set(String(state.rules[k]||"").split(",").map(s=>s.trim()).filter(Boolean)); String(data.rules[k]).split(",").map(s=>s.trim()).filter(Boolean).forEach(x=>mine.add(x)); state.rules[k]=[...mine].join(", "); }
   if(data.imports){ const have=new Set((state.imports||[]).map(i=>i.id)); state.imports=[...(state.imports||[]), ...data.imports.filter(i=>!have.has(i.id))]; }
   if(data.cats){ const have=new Set(cats().map(c=>c.k)); const other=state.cats.findIndex(c=>c.role==="other"); state.cats.splice(other<0?state.cats.length:other, 0, ...data.cats.filter(c=>!have.has(c.k) && !c.role).map(({k,c})=>({k,c}))); }
+  if(data.splits) state.splits=Object.assign({}, data.splits, state.splits||{});
   if(data.notes) state.notes=Object.assign({}, data.notes, state.notes||{});
   if(data.mine) state.mine=[...new Set([...(state.mine||[]), ...data.mine])];
   await save(); period=latestMonth(); renderRules(); render();
@@ -923,7 +945,7 @@ function startApp(){
 function render(){
   if(!state) return;
   RULES=compiledRules(); renderImports();
-  const tx=state.tx.map(t=>({...t, cat:categorize(t), m:ym(t.date)}));
+  const tx=viewTx().map(t=>({...t, cat:categorize(t), m:ym(t.date)}));
   $("emptyBanner").hidden = tx.length>0;
   $("sampleBanner").hidden = !state.sample;
   const months=[...new Set(tx.map(t=>t.m))].sort();
@@ -993,14 +1015,15 @@ function renderTable(cur){
   const shown=rows.slice(0,showN);
   $("rows").innerHTML= rows.length? shown.map((t,i)=>`<tr>
     <td class="num">${t.date.split("-").reverse().join("/")}</td>
-    <td class="desc">${esc(t.desc)}${notes[t.id]?`<span class="note">${esc(notes[t.id])}</span>`:""}</td>
+    <td class="desc">${esc(t.desc)}${t.parent?`<span class="part">parte ${t.part+1}/${t.parts}</span>`:""}${notes[t.id]?`<span class="note">${esc(notes[t.id])}</span>`:""}</td>
     <td><span class="src ${t.source}">${t.source==="ca"?"Conta CA":"Coverflex"}</span>${t.manual?' <span class="ov">à mão</span>':''}</td>
     <td><select data-i="${i}" aria-label="Categoria">${opts}</select>${state.overrides[t.id]?' <span class="ov">manual</span>':''}</td>
     <td class="amt num" style="color:${t.amount<0?'var(--fg)':'var(--pos)'}">${fmt(t.amount)}</td>
-    <td class="acts"><button class="rowdel" type="button" data-n="${i}" title="${notes[t.id]?"Editar comentário":"Escrever comentário"}" aria-label="Comentário">✎</button><button class="rowdel" type="button" data-d="${i}" title="Apagar este movimento" aria-label="Apagar este movimento">✕</button></td></tr>`).join("")
+    <td class="acts"><button class="rowdel${notes[t.id]?" has":""}" type="button" data-n="${i}" title="${notes[t.id]?"Editar comentário":"Escrever comentário"}" aria-label="Comentário">${ICON.note}</button><button class="rowdel${t.parent?" has":""}" type="button" data-s="${i}" title="${t.parent?"Editar divisão":"Dividir em partes"}" aria-label="Dividir">${ICON.split}</button><button class="rowdel" type="button" data-d="${i}" title="Apagar este movimento" aria-label="Apagar este movimento">✕</button></td></tr>`).join("")
     : `<tr><td colspan="6" class="empty">${state.tx.length?"Nenhum movimento corresponde aos filtros.":"Os movimentos importados aparecem aqui."}</td></tr>`;
   $("rows").querySelectorAll("select").forEach(s=>{ const t=shown[+s.dataset.i]; s.value=t.cat;
-    s.onchange=async()=>{ state.overrides[t.id]=s.value; await save(); render(); offerRule(t,s.value); }; });
+    s.onchange=async()=>{ state.overrides[t.id]=s.value; await save(); render(); if(!t.parent) offerRule(t,s.value); }; });
+  $("rows").querySelectorAll("button[data-s]").forEach(b=>{ const t=shown[+b.dataset.s]; b.onclick=()=>openSplit(t.parent||t.id); });
   $("rows").querySelectorAll("button[data-n]").forEach(b=>{ const t=shown[+b.dataset.n];
     b.onclick=async()=>{
       const v=await ask({title:"Comentário", text:`${t.date.split("-").reverse().join("/")} · ${t.desc} · ${fmt(t.amount)}`, input:true, type:"text", label:"Comentário (deixa vazio para apagar)", value:(state.notes||{})[t.id]||"", maxlength:300, ok:"Guardar"});
@@ -1011,15 +1034,34 @@ function renderTable(cur){
     }; });
   $("rows").querySelectorAll("button[data-d]").forEach(b=>{ const t=shown[+b.dataset.d];
     b.onclick=async()=>{
-      const ok=await ask({title:"Apagar este movimento?", text:`${t.date.split("-").reverse().join("/")} · ${t.desc} · ${fmt(t.amount)}`, ok:"Apagar", danger:true});
-      if(!ok) return; removeTx(x=>x.id===t.id); await save(); render(); toast("Movimento apagado.");
+      const orig=t.parent && state.tx.find(x=>x.id===t.parent);
+      const ok=await ask({title:"Apagar este movimento?", text: orig ? `Esta é uma parte de ${orig.date.split("-").reverse().join("/")} · ${orig.desc} · ${fmt(orig.amount)}. Sai o movimento inteiro, com todas as partes. Para juntar as partes outra vez, usa antes a tesoura e "Desfazer divisão".` : `${t.date.split("-").reverse().join("/")} · ${t.desc} · ${fmt(t.amount)}`, ok:"Apagar", danger:true});
+      if(!ok) return; removeTx(x=>x.id===(t.parent||t.id)); await save(); render(); toast("Movimento apagado.");
     }; });
   $("more").hidden=rows.length<=showN;
+}
+/* Divisões: o movimento original fica intacto em state.tx; state.splits[id] guarda as partes
+   (descrição e valor, com o sinal do original). A vista mostra as partes em vez do original, cada
+   uma com id próprio ("id~0", "id~1"…), por isso categoria manual e comentário de cada parte usam
+   state.overrides e state.notes como qualquer movimento. A última parte fica sempre com o resto,
+   para a soma bater certo mesmo que o valor do original mude (por exemplo, numa correção da Coverflex). */
+function viewTx(){
+  const sp=state.splits||{};
+  return state.tx.flatMap(t=>{
+    const parts=sp[t.id]; if(!parts || parts.length<2) return [t];
+    const head=parts.slice(0,-1).reduce((a,p)=>a+p.amount,0);
+    return parts.map((p,i)=>({...t, id:t.id+"~"+i, parent:t.id, part:i, parts:parts.length, desc:p.desc||t.desc,
+      amount: i<parts.length-1 ? p.amount : round2(t.amount-head)}));
+  });
+}
+function clearSplit(id){
+  if(state.splits) delete state.splits[id];
+  for(const m of [state.overrides, state.notes||{}]) for(const k in m) if(k.startsWith(id+"~")) delete m[k];
 }
 function removeTx(pred){
   const gone=state.tx.filter(pred), ids=new Set(gone.map(t=>t.id));
   state.tx=state.tx.filter(t=>!ids.has(t.id));
-  for(const id of ids){ delete state.overrides[id]; if(state.notes) delete state.notes[id]; }
+  for(const id of ids){ delete state.overrides[id]; if(state.notes) delete state.notes[id]; clearSplit(id); }
   if(state.imports) state.imports=state.imports.map(i=>({...i, n:state.tx.filter(t=>t.imp===i.id).length})).filter(i=>i.n>0);
   return gone.length;
 }
@@ -1065,7 +1107,7 @@ function renameCat(old, n){
   for(const id in state.overrides) if(state.overrides[id]===old) state.overrides[id]=n;
   if(catFilter===old) catFilter=n;
 }
-function renderCats(){
+function renderCatList(){
   $("catList").innerHTML=cats().map((c,i)=>`<div class="catrow"><i class="sw" style="background:${c.c}"></i><span class="nm">${esc(c.k)}${c.role?`<span class="ov">(${ROLE_LABEL[c.role]})</span>`:""}</span>
     <button type="button" data-ren="${i}">Mudar nome</button>${c.orig?"":`<button type="button" class="danger" data-del="${i}">Apagar</button>`}</div>`).join("");
   $("catList").querySelectorAll("button[data-ren]").forEach(b=>b.onclick=async()=>{
@@ -1096,7 +1138,7 @@ $("newCat").onclick=async()=>{
   await save(); renderRules(); render(); toast(`Categoria “${n}” criada.`);
 };
 function renderRules(){
-  renderCats();
+  renderCatList();
   $("rulegrid").innerHTML=cats().filter(c=>c.role!=="other").map((c,i)=>`<label for="r${i}"><span><i style="display:inline-block;width:9px;height:9px;border-radius:2px;background:${c.c};margin-right:6px"></i>${esc(c.k)}${isExcl(c.k)?' <span class="ov">(fora dos totais)</span>':''}</span><textarea id="r${i}" data-k="${esc(c.k)}">${esc(state.rules[c.k]||"")}</textarea></label>`).join("");
 }
 let toastTimer;
@@ -1115,6 +1157,62 @@ $("q").oninput=()=>{ showN=60; render(); };
 $("fCat").onchange=e=>{ catFilter=e.target.value; showN=60; render(); };
 $("fSrc").onchange=()=>{ showN=60; render(); };
 $("more").onclick=()=>{ showN+=100; render(); };
+let splitOf=null;
+function openSplit(id){
+  const t=state.tx.find(x=>x.id===id); if(!t) return; splitOf=t;
+  const existing=(state.splits||{})[id], sign=t.amount<0?-1:1;
+  $("spInfo").textContent=`${t.date.split("-").reverse().join("/")} · ${t.desc} · ${fmt(t.amount)}`;
+  $("spUndo").hidden=!existing; $("spErr").textContent=""; $("spParts").innerHTML="";
+  const view=existing ? viewTx().filter(x=>x.parent===id) : null;
+  if(view) view.forEach(p=>addPart(p.desc, Math.abs(p.amount), state.overrides[p.id]||""));
+  else { addPart(t.desc,"",""); addPart(t.desc,"",""); }
+  updateLeft(); $("splitDlg").showModal();
+  const first=$("spParts").querySelector(".spamt"); if(first && !view) first.focus();
+}
+function addPart(desc, amt, cat){
+  const row=document.createElement("div"); row.className="sprow";
+  row.innerHTML=`<input class="spdesc" type="text" maxlength="120" autocomplete="off" aria-label="Descrição">
+    <input class="spamt" type="text" inputmode="decimal" placeholder="resto" autocomplete="off" aria-label="Valor">
+    <select class="spcat" aria-label="Categoria"><option value="">Automática</option>${cats().map(c=>`<option>${esc(c.k)}</option>`).join("")}</select>
+    <button type="button" class="rowdel" title="Tirar esta parte" aria-label="Tirar esta parte">✕</button>`;
+  row.querySelector(".spdesc").value=desc;
+  row.querySelector(".spamt").value= amt===""?"":String(amt).replace(".",",");
+  row.querySelector(".spcat").value=cat;
+  row.querySelector(".spamt").oninput=updateLeft;
+  row.querySelector("button").onclick=()=>{ if($("spParts").children.length>2){ row.remove(); updateLeft(); } else $("spErr").textContent="Uma divisão tem pelo menos duas partes."; };
+  $("spParts").appendChild(row);
+}
+function readParts(){
+  return [...$("spParts").children].map(r=>({desc:r.querySelector(".spdesc").value.replace(/\s+/g," ").trim(), raw:r.querySelector(".spamt").value.trim(), cat:r.querySelector(".spcat").value}));
+}
+function updateLeft(){
+  if(!splitOf) return;
+  const total=Math.abs(splitOf.amount), used=readParts().reduce((a,p)=>a+(p.raw?Math.abs(parseNumber(p.raw))||0:0),0), left=round2(total-used);
+  $("spLeft").textContent= left===0 ? "Tudo distribuído" : left>0 ? `Por distribuir: ${fmt(left)}` : `A mais: ${fmt(-left)}`;
+}
+$("spAdd").onclick=()=>{ addPart(splitOf.desc,"",""); updateLeft(); };
+$("spCancel").onclick=()=>$("splitDlg").close();
+$("spUndo").onclick=async()=>{
+  clearSplit(splitOf.id); await save(); $("splitDlg").close(); render(); toast("Divisão desfeita.");
+};
+$("splitForm").onsubmit=async e=>{
+  e.preventDefault();
+  const t=splitOf, total=round2(Math.abs(t.amount)), sign=t.amount<0?-1:1, parts=readParts();
+  const blanks=parts.filter(p=>!p.raw);
+  if(blanks.length>1){ $("spErr").textContent="Só uma parte pode ficar com o valor em branco."; return; }
+  for(const p of parts) if(p.raw && !(Math.abs(parseNumber(p.raw))>0)){ $("spErr").textContent=`Valor inválido: “${p.raw}”.`; return; }
+  const used=round2(parts.reduce((a,p)=>a+(p.raw?Math.abs(parseNumber(p.raw)):0),0));
+  if(blanks.length) blanks[0].raw=String(round2(total-used));
+  const vals=parts.map(p=>round2(Math.abs(parseNumber(p.raw))));
+  if(vals.some(v=>!(v>0))){ $("spErr").textContent="Cada parte tem de ter um valor maior que zero."; return; }
+  if(Math.abs(round2(vals.reduce((a,v)=>a+v,0))-total)>0.005){ $("spErr").textContent=`As partes somam ${fmt(vals.reduce((a,v)=>a+v,0))}, mas o movimento é de ${fmt(total)}.`; return; }
+  // categorias das partes vêm do formulário; comentários ficam nas partes que continuam a existir
+  for(const k in state.overrides) if(k.startsWith(t.id+"~")) delete state.overrides[k];
+  for(const k in (state.notes||{})) if(k.startsWith(t.id+"~") && +k.split("~").pop()>=parts.length) delete state.notes[k];
+  (state.splits ||= {})[t.id]=parts.map((p,i)=>({desc:p.desc&&p.desc!==t.desc?p.desc:"", amount:round2(sign*vals[i])}));
+  parts.forEach((p,i)=>{ if(p.cat) state.overrides[t.id+"~"+i]=p.cat; });
+  await save(); $("splitDlg").close(); render(); toast(`Movimento dividido em ${parts.length} partes.`);
+};
 /* Movimentos à mão: entram como os importados (contam nos totais, nas regras e nas cópias). Uma categoria
    escolhida aqui fica como escolha manual; "Automática" deixa as regras decidir. */
 $("addBtn").onclick=()=>{
@@ -1139,7 +1237,7 @@ $("addForm").onsubmit=async e=>{
   render(); toast("Movimento adicionado.");
 };
 $("delShown").onclick=async()=>{
-  const ids=new Set(shownRows.map(t=>t.id)), n=ids.size; if(!n) return;
+  const ids=new Set(shownRows.map(t=>t.parent||t.id)), n=ids.size; if(!n) return;
   const all=n===state.tx.length;
   const ok=await ask({title: all?"Apagar todos os movimentos?":`Apagar ${n} movimentos?`,
     text:(all?`Saem os ${n} movimentos importados. `:`Saem os ${n} movimentos que a tabela está a mostrar com os filtros atuais (mês, categoria, origem e texto). `)+"A conta, a password e as regras ficam. Não dá para desfazer, mas podes importar os ficheiros outra vez.", ok:"Apagar", danger:true});
