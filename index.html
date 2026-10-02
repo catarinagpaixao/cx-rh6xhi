@@ -305,10 +305,9 @@ dialog p{margin:0;color:var(--muted);font-size:.9rem}
       <summary>Como exportar os extratos</summary>
       <div class="help" style="display:flex;flex-direction:column;gap:8px;margin-top:10px">
         <p style="margin:0"><b>Crédito Agrícola:</b> importa o PDF do extrato mensal (Extracto Integrado) tal como o recebes do banco. A app confere os movimentos com os saldos do extrato e, se não baterem certo, não importa nada.</p>
-        <p style="margin:0"><b>Coverflex:</b> pede o ficheiro ao assistente da Coverflex com o texto abaixo e importa o CSV que ele gerar. Pede sempre os últimos 40 dias: assim cada ficheiro apanha o fim do mês anterior, e os movimentos repetidos não são importados duas vezes.</p>
-        <pre class="prompt" id="cfPrompt">Gera um ficheiro CSV com todos os movimentos do meu saldo de refeição dos últimos 40 dias, incluindo carregamentos. Uma linha por movimento, sem linhas de totais. Usa vírgula como separador, ponto como separador decimal e esta linha de cabeçalho, exatamente assim:
-date_day,movement_id,status,operation_type,description,merchant_name,balance_after
-Em date_day põe a data e hora completas do movimento, com milissegundos, como aparecem nos teus dados (por exemplo 2026-01-15T12:30:45.123). Em balance_after põe o saldo depois do movimento. Não calcules nem inventes valores: usa só os dados que tens.</pre>
+        <p style="margin:0"><b>Coverflex:</b> pede o ficheiro ao assistente da Coverflex com o texto abaixo, um mês completo de cada vez (como o extrato do CA), e importa o CSV que ele gerar. Importa os meses por ordem: o valor de cada movimento é calculado a partir do saldo do anterior, por isso o primeiro movimento de um mês só tem valor se o mês anterior já estiver importado.</p>
+        <label class="field" style="max-width:240px"><span>Mês a exportar</span><select id="cfMonth"></select></label>
+        <pre class="prompt" id="cfPrompt"></pre>
         <div><button type="button" id="copyCfPrompt">Copiar texto para a Coverflex</button></div>
         <p style="margin:0">O ficheiro não traz o valor de cada movimento: a app calcula-o pela diferença de saldos. Por isso, no primeiro ficheiro que importares, o movimento mais antigo fica de fora (não há saldo anterior); a partir daí, cada importação continua a partir dos movimentos já guardados. Se o assistente usar nomes de colunas um pouco diferentes, a app reconhece-os na mesma.</p>
         <p style="margin:0"><b>Transferências</b> fica fora dos totais, para que movimentos entre contas tuas (Revolut, XTB…) não contem duas vezes. Transferências e MB WAY enviados a pessoas contam como despesa e os recebidos como rendimento.</p>
@@ -815,7 +814,7 @@ async function importFiles(files, source){
         const {tx:cf, updates, skipped}=coverflexToTx(rows, [...state.tx, ...fresh]);
         for(const u of updates){ const t=state.tx.find(x=>x.id===u.id)||fresh.find(x=>x.id===u.id); if(t){ t.amount=u.amount; fixed++; } }
         if(!cf.length && !skipped && !updates.length){ errs.push(`${f.name}: nenhum movimento novo.`); continue; }
-        if(skipped) errs.push(`${f.name}: ${skipped===1?"1 movimento ficou":skipped+" movimentos ficaram"} de fora por não ser possível calcular o valor (normalmente o primeiro do ficheiro). Exporta a partir de uns dias antes para o apanhar.`);
+        if(skipped) errs.push(`${f.name}: ${skipped===1?"1 movimento ficou":skipped+" movimentos ficaram"} de fora por não ser possível calcular o valor (normalmente o primeiro do mês). Importa também o mês anterior e volta a importar este ficheiro para o apanhar.`);
         fresh.push(...cf);
         continue;
       }
@@ -1070,6 +1069,19 @@ $("delShown").onclick=async()=>{
   const k=removeTx(t=>ids.has(t.id)); if(!state.tx.length) state.imports=[];
   await save(); period=latestMonth(); render(); toast(`${k} movimentos apagados.`);
 };
+function cfPromptText(k){
+  const [y,m]=k.split("-").map(Number), last=new Date(y,m,0).getDate(), mes=MESL[m-1];
+  return `Gera um ficheiro CSV com todos os movimentos do meu saldo de refeição de ${mes} de ${y}, ou seja, de 1 a ${last} de ${mes} de ${y} (inclusive), incluindo carregamentos. Uma linha por movimento, sem linhas de totais. Usa vírgula como separador, ponto como separador decimal e esta linha de cabeçalho, exatamente assim:
+date_day,movement_id,status,operation_type,description,merchant_name,balance_after
+Em date_day põe a data e hora completas do movimento, com milissegundos, como aparecem nos teus dados (por exemplo ${y}-${String(m).padStart(2,"0")}-15T12:30:45.123). Em balance_after põe o saldo depois do movimento. Não calcules nem inventes valores: usa só os dados que tens.`;
+}
+// Por omissão, o mês anterior: é o do extrato do CA que chega no início de cada mês.
+(()=>{
+  const n=new Date(), opts=[];
+  for(let i=1;i<=12;i++){ const d=new Date(n.getFullYear(), n.getMonth()-i, 1); opts.push(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`); }
+  const sel=$("cfMonth"); sel.innerHTML=opts.map(k=>`<option value="${k}">${ymLabel(k,true)}</option>`).join("");
+  const show=()=>{ $("cfPrompt").textContent=cfPromptText(sel.value); }; sel.onchange=show; show();
+})();
 $("copyCfPrompt").onclick=async()=>{
   const el=$("cfPrompt");
   try{ await navigator.clipboard.writeText(el.textContent); toast("Texto copiado. Cola-o no assistente da Coverflex."); }
