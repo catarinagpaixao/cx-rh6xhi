@@ -82,6 +82,7 @@ button:disabled{opacity:.55;cursor:default}
 /* o campo de ficheiro fica invisível por cima do botão: o Safari (sobretudo nas apps da Dock) nem sempre abre o seletor a partir de um campo com display:none */
 .drop input{position:absolute;inset:0;width:100%;height:100%;margin:0;opacity:0;cursor:pointer;font-size:0}
 .ca{--src:var(--accent)} .cf{--src:var(--accent-2)}
+.prompt{margin:0;padding:10px 12px;border-radius:8px;background:var(--chip);color:var(--fg);font-family:var(--mono);font-size:12px;line-height:1.5;white-space:pre-wrap;word-break:break-word;user-select:text;-webkit-user-select:text}
 /* No Mac (rato) a importação faz-se a arrastar: na app da Dock o clique não abre o seletor de ficheiros.
    Em ecrãs táteis (iPhone) não há arrastar, por isso o texto pede um toque. */
 .t-desk{display:none}
@@ -292,9 +293,14 @@ dialog p{margin:0;color:var(--muted);font-size:.9rem}
     <details class="rules">
       <summary>Como exportar os extratos</summary>
       <div class="help" style="display:flex;flex-direction:column;gap:8px;margin-top:10px">
-        <p style="margin:0"><b>Crédito Agrícola:</b> no CA Online, abre a conta à ordem, vai a Movimentos, escolhe o intervalo de datas e exporta em Excel ou CSV. Importa o ficheiro tal como sai; repetir importações não duplica movimentos.</p>
-        <p style="margin:0"><b>Coverflex:</b> no Chrome do Mac, instala a extensão <code>coverflex-downloader</code> (github.com/ilbonte/coverflex-downloader), abre a app web da Coverflex e descarrega os movimentos em CSV.</p>
-        <p style="margin:0"><b>Transferências</b> fica fora dos totais de despesas e receitas, para que movimentos entre contas tuas não contem duas vezes. Pagamentos MB WAY a pessoas contam como despesa.</p>
+        <p style="margin:0"><b>Crédito Agrícola:</b> importa o PDF do extrato mensal (Extracto Integrado) tal como o recebes do banco. A app confere os movimentos com os saldos do extrato e, se não baterem certo, não importa nada.</p>
+        <p style="margin:0"><b>Coverflex:</b> pede o ficheiro ao assistente da Coverflex com o texto abaixo e importa o CSV que ele gerar. Pede sempre os últimos 40 dias: assim cada ficheiro apanha o fim do mês anterior, e os movimentos repetidos não são importados duas vezes.</p>
+        <pre class="prompt" id="cfPrompt">Gera um ficheiro CSV com todos os movimentos do meu saldo de refeição dos últimos 40 dias, incluindo carregamentos. Uma linha por movimento, sem linhas de totais. Usa vírgula como separador, ponto como separador decimal e esta linha de cabeçalho, exatamente assim:
+date_day,movement_id,status,operation_type,description,merchant_name,balance_after
+Em date_day põe a data e hora completas do movimento, com milissegundos, como aparecem nos teus dados (por exemplo 2026-01-15T12:30:45.123). Em balance_after põe o saldo depois do movimento. Não calcules nem inventes valores: usa só os dados que tens.</pre>
+        <div><button type="button" id="copyCfPrompt">Copiar texto para a Coverflex</button></div>
+        <p style="margin:0">O ficheiro não traz o valor de cada movimento: a app calcula-o pela diferença de saldos. Por isso, no primeiro ficheiro que importares, o movimento mais antigo fica de fora (não há saldo anterior); a partir daí, cada importação continua a partir dos movimentos já guardados. Se o assistente usar nomes de colunas um pouco diferentes, a app reconhece-os na mesma.</p>
+        <p style="margin:0"><b>Transferências</b> fica fora dos totais, para que movimentos entre contas tuas (Revolut, XTB…) não contem duas vezes. Transferências e MB WAY enviados a pessoas contam como despesa e os recebidos como rendimento.</p>
       </div>
     </details>
   </section>
@@ -701,43 +707,69 @@ function caStatementToTx(lines){
   return out.map(({page,y,...t})=>t);
 }
 
-/* Exportação CSV da Coverflex: não traz o valor, só o saldo depois de cada movimento.
-   Entre carregamentos, as compras ordenadas por saldo decrescente formam a sequência
-   real (a data de cada linha é a da compra, não a da liquidação), e o valor é a diferença
-   para o saldo anterior. Os movimentos já guardados servem de ponto de partida. */
-function isCoverflexExport(rows){ const h=(rows[0]||[]).map(c=>norm(c)); return h.includes("balance_after") && h.includes("movement_id"); }
+/* Exportação CSV da Coverflex, pedida ao assistente da Coverflex. O formato varia de pedido para pedido
+   (nomes de colunas, movement_id presente ou não), mas traz sempre a data/hora e o saldo depois de cada
+   movimento. Cada movimento é identificado por data/hora ao milissegundo + saldo, para que ficheiros em
+   formatos diferentes não dupliquem. O valor sai da diferença de saldos: entre carregamentos, as compras
+   ordenadas por saldo decrescente formam a sequência real (a data de cada linha é a da compra, não a da
+   liquidação). Os movimentos já guardados entram na sequência e o valor deles é recalculado: se um ficheiro
+   anterior omitia movimentos, o valor que juntava vários fica corrigido quando chegam. Uma coluna "amount", se existir,
+   só é usada quando a diferença de saldos não dá o valor (por exemplo, o primeiro movimento). */
+function cfCols(row){
+  const h=(row||[]).map(c=>norm(c)), pick=(...ks)=>{ for(const k of ks){ const i=h.indexOf(k); if(i>-1) return i; } return -1; };
+  return {ts:pick("date_day","date","datetime","created_at"), status:pick("status"), desc:pick("description"), merchant:pick("merchant_name","merchant"),
+          bal:pick("balance_after"), amt:pick("amount"), op:pick("operation_type","type")};
+}
+function isCoverflexExport(rows){ const c=cfCols(rows[0]); return c.ts>-1 && c.op>-1 && (c.bal>-1 || c.amt>-1); }
+const CF_MISSING_TOPUP=100; // €: uma reordenação de liquidações sobe o saldo no máximo o valor de uma refeição; um carregamento mensal sobe muito mais
+const cfKey=(ts,bal)=>ts+"|"+(typeof bal==="number"&&!isNaN(bal)?bal.toFixed(2):"");
 function coverflexToTx(rows, known){
-  const h=rows[0].map(c=>norm(c)), ix=k=>h.indexOf(k);
-  const c={ts:ix("date_day"), id:ix("movement_id"), status:ix("status"), desc:ix("description"), merchant:ix("merchant_name"), bal:ix("balance_after"), op:ix("operation_type")};
-  const mine=new Map(known.filter(t=>t.mid && typeof t.bal==="number").map(t=>[t.mid,{...t, up:t.amount>0, old:true}]));
+  const c=cfCols(rows[0]);
+  const mine=new Map(known.filter(t=>t.source==="cf" && t.ts && typeof t.bal==="number").map(t=>[cfKey(t.ts,t.bal),{...t, up:t.amount>0, old:true}]));
+  const ids=new Set(known.map(t=>t.id));
   for(const r of rows.slice(1)){
-    const mid=String(r[c.id]??"").trim(); if(!mid || mine.has(mid)) continue;
     if(/pend|cancel|reject|fail|declin|revers/i.test(String(r[c.status]??""))) continue;
-    const bal=parseNumber(r[c.bal]), ts=String(r[c.ts]??"").trim(), date=parseDate(ts);
-    if(isNaN(bal) || !date) continue;
+    const bal=c.bal>-1?parseNumber(r[c.bal]):NaN, given=c.amt>-1?Math.abs(parseNumber(r[c.amt])):NaN, ts=String(r[c.ts]??"").trim(), date=parseDate(ts);
+    if((isNaN(bal) && !(given>0)) || !date) continue;
+    const key=cfKey(ts,bal); if(mine.has(key) || ids.has("cf|"+key)) continue;
     const op=norm(r[c.op]);
-    let desc=String(r[c.merchant]||r[c.desc]||"").replace(/\s+/g," ").trim();
+    let desc=String((c.merchant>-1&&r[c.merchant])||(c.desc>-1&&r[c.desc])||"").replace(/\s+/g," ").trim();
     if(!desc || /^unknown$/i.test(desc)) desc = op==="topup" ? "Carregamento Coverflex" : "Coverflex";
-    mine.set(mid,{date, ts, mid, bal, up:op!=="spend", desc, source:"cf", id:"cf|"+mid});
+    const m={date, ts, up:op!=="spend", desc, source:"cf", id:"cf|"+key};
+    if(!isNaN(bal)) m.bal=bal;
+    if(given>0) m.given=round2(given);
+    mine.set(key,m);
   }
-  const all=[...mine.values()].sort((a,b)=>a.ts<b.ts?-1:a.ts>b.ts?1:0);
-  const segs=[]; let cur=[];
-  for(const m of all){ if(m.up && cur.length){ segs.push(cur); cur=[]; } cur.push(m); }
+  const fresh=[], updates=[]; let prev=null, skipped=0;
+  const keep=(m,amount)=>{ const {up,given,old,...t}=m; fresh.push({...t, amount}); };
+  // sem saldo não entram na sequência; só chegam aqui com valor
+  for(const m of mine.values()) if(!m.old && m.bal===undefined) keep(m, m.up?m.given:-m.given);
+  const all=[...mine.values()].filter(m=>m.bal!==undefined).sort((a,b)=>a.ts<b.ts?-1:a.ts>b.ts?1:0);
+  // Um bloco vai de um carregamento ao seguinte. Se o saldo sobe mais do que uma reordenação de
+  // liquidações explica, faltou a linha de um carregamento: começa um bloco sem saldo anterior conhecido.
+  const segs=[]; let cur=[], last=null;
+  for(const m of all){
+    const gap=!m.up && last && m.bal-last.bal>CF_MISSING_TOPUP;
+    if((m.up||gap) && cur.length){ segs.push(cur); cur=[]; }
+    if(gap) cur.gap=true;
+    cur.push(m); last=m;
+  }
   if(cur.length) segs.push(cur);
   // uma compra feita antes de um carregamento mas liquidada depois tem saldo acima do carregamento
-  for(let i=1;i<segs.length;i++){ const top=segs[i][0]; if(!top.up) continue; const late=segs[i-1].filter(m=>!m.up && m.bal>top.bal); segs[i-1]=segs[i-1].filter(m=>!late.includes(m)); segs[i].push(...late); }
-  const fresh=[]; let prev=null, skipped=0;
+  for(let i=1;i<segs.length;i++){ const top=segs[i][0]; if(!top.up) continue; const late=segs[i-1].filter(m=>!m.up && m.bal>top.bal), gap=segs[i-1].gap; segs[i-1]=segs[i-1].filter(m=>!late.includes(m)); segs[i-1].gap=gap; segs[i].push(...late); }
   for(const s of segs){
+    if(s.gap) prev=null;
     const head=s[0].up ? [s[0]] : [], seq=[...head, ...s.slice(head.length).sort((a,b)=>b.bal-a.bal)];
     for(const m of seq){
       const amount = prev===null ? null : round2(m.bal-prev);
       prev=m.bal;
-      if(m.old) continue;
-      if(amount===null || amount===0 || (amount>0)!==m.up){ skipped++; continue; }
-      const {up, ...t}=m; fresh.push({...t, amount});
+      if(m.old){ if(amount!==null && amount!==0 && (amount>0)===m.up && amount!==m.amount) updates.push({id:m.id, amount}); continue; }
+      if(amount!==null && amount!==0 && (amount>0)===m.up) keep(m, amount);
+      else if(m.given) keep(m, m.up?m.given:-m.given);
+      else skipped++;
     }
   }
-  return {tx:fresh, skipped};
+  return {tx:fresh, updates, skipped};
 }
 
 function mergeTx(fresh){
@@ -747,7 +779,7 @@ function mergeTx(fresh){
   return {added,dup};
 }
 async function importFiles(files, source){
-  const fresh=[], errs=[];
+  const fresh=[], errs=[]; let fixed=0;
   for(const f of files){
     try{
       if(/\.pdf$/i.test(f.name) || f.type==="application/pdf"){
@@ -756,8 +788,9 @@ async function importFiles(files, source){
       }
       const rows=await readFile(f);
       if(isCoverflexExport(rows)){
-        const {tx:cf, skipped}=coverflexToTx(rows, [...state.tx, ...fresh]);
-        if(!cf.length && !skipped){ errs.push(`${f.name}: nenhum movimento novo.`); continue; }
+        const {tx:cf, updates, skipped}=coverflexToTx(rows, [...state.tx, ...fresh]);
+        for(const u of updates){ const t=state.tx.find(x=>x.id===u.id)||fresh.find(x=>x.id===u.id); if(t){ t.amount=u.amount; fixed++; } }
+        if(!cf.length && !skipped && !updates.length){ errs.push(`${f.name}: nenhum movimento novo.`); continue; }
         if(skipped) errs.push(`${f.name}: ${skipped===1?"1 movimento ficou":skipped+" movimentos ficaram"} de fora por não ser possível calcular o valor (normalmente o primeiro do ficheiro). Exporta a partir de uns dias antes para o apanhar.`);
         fresh.push(...cf);
         continue;
@@ -771,10 +804,10 @@ async function importFiles(files, source){
     }catch(e){ errs.push(`${f.name}: ${e.message}`); }
   }
   let msg="";
-  if(fresh.length){
+  if(fresh.length || fixed){
     const {added,dup}=mergeTx(fresh); await save();
     if(added) period=latestMonth();
-    render(); msg=`${added} movimentos importados`+(dup?`, ${dup} já existiam`:"")+".";
+    render(); msg=`${added} movimentos importados`+(dup?`, ${dup} já existiam`:"")+"."+(fixed?` ${fixed===1?"1 valor da Coverflex corrigido":fixed+" valores da Coverflex corrigidos"} com os movimentos que faltavam.`:"");
   }
   toast((msg+" "+errs.join(" ")).trim() || "Nada importado.");
 }
@@ -952,6 +985,11 @@ $("q").oninput=()=>{ showN=60; render(); };
 $("fCat").onchange=e=>{ catFilter=e.target.value; showN=60; render(); };
 $("fSrc").onchange=()=>{ showN=60; render(); };
 $("more").onclick=()=>{ showN+=100; render(); };
+$("copyCfPrompt").onclick=async()=>{
+  const el=$("cfPrompt");
+  try{ await navigator.clipboard.writeText(el.textContent); toast("Texto copiado. Cola-o no assistente da Coverflex."); }
+  catch(_){ const r=document.createRange(); r.selectNodeContents(el); const sel=getSelection(); sel.removeAllRanges(); sel.addRange(r); toast("Texto selecionado. Copia com ⌘C."); }
+};
 $("loadSample").onclick=async()=>{ state.tx=sampleData(); state.sample=true; await save(); period=latestMonth(); render(); };
 $("clearSample").onclick=async()=>{ state.tx=[]; state.overrides={}; state.sample=false; await save(); period="all"; render(); toast("Exemplo removido."); };
 $("saveRules").onclick=async()=>{ document.querySelectorAll("#rulegrid textarea").forEach(t=>state.rules[t.dataset.k]=t.value); await save(); render(); toast("Regras guardadas e aplicadas."); };
