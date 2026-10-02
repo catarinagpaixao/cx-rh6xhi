@@ -209,12 +209,12 @@ dialog p{margin:0;color:var(--muted);font-size:.9rem}
   <section class="imports">
     <label class="drop ca" id="dropCA">
       <span class="dot">CA</span>
-      <span><b>Importar extrato Crédito Agrícola</b><small>CSV ou Excel exportado do CA Online / CA Mobile</small></span>
-      <input type="file" id="fileCA" accept=".csv,.txt,.xls,.xlsx,text/csv" multiple>
+      <span><b>Importar extrato Crédito Agrícola</b><small>PDF do extrato mensal (Extracto Integrado)</small></span>
+      <input type="file" id="fileCA" accept=".pdf,application/pdf,.csv,.txt,.xls,.xlsx,text/csv" multiple>
     </label>
     <label class="drop cf" id="dropCF">
       <span class="dot">CF</span>
-      <span><b>Importar movimentos Coverflex</b><small>CSV da extensão Coverflex Downloader</small></span>
+      <span><b>Importar movimentos Coverflex</b><small>CSV exportado da Coverflex</small></span>
       <input type="file" id="fileCF" accept=".csv,.txt,.xls,.xlsx,text/csv" multiple>
     </label>
   </section>
@@ -595,6 +595,106 @@ async function readFile(file){
   if(text.includes("\uFFFD")) text=new TextDecoder("windows-1252").decode(buf);
   return parseCSV(text);
 }
+const round2 = v => Math.round(v*100)/100;
+
+/* Extrato mensal do Crédito Agrícola em PDF. O pdf.js só é carregado quando é preciso.
+   Cada linha traz o saldo depois do movimento; o sinal sai da diferença de saldos,
+   o que também confirma que nenhuma linha ficou por ler. */
+let pdfjsLoading=null;
+function loadPdfJs(){
+  if(window.pdfjsLib) return Promise.resolve(window.pdfjsLib);
+  return pdfjsLoading ||= new Promise((res,rej)=>{
+    const s=document.createElement("script"); s.src="vendor/pdf.min.js";
+    s.onload=()=>{ window.pdfjsLib.GlobalWorkerOptions.workerSrc="vendor/pdf.worker.min.js"; res(window.pdfjsLib); };
+    s.onerror=()=>{ pdfjsLoading=null; s.remove(); rej(new Error("o leitor de PDF não carregou. Abre a app com internet e tenta de novo.")); };
+    document.head.appendChild(s);
+  });
+}
+async function pdfLines(file){
+  const lib=await loadPdfJs();
+  let doc;
+  try{ doc=await lib.getDocument({data:new Uint8Array(await file.arrayBuffer()), isEvalSupported:false, disableFontFace:true}).promise; }
+  catch(e){ throw new Error(e && e.name==="PasswordException" ? "o PDF está protegido por password." : "não consegui abrir o PDF."); }
+  const lines=[];
+  try{
+    for(let p=1;p<=doc.numPages;p++){
+      const rows=[];
+      for(const it of (await (await doc.getPage(p)).getTextContent()).items){
+        if(!it.str || !it.str.trim()) continue;
+        const x=it.transform[4], y=it.transform[5];
+        let r=rows.find(r=>Math.abs(r.y-y)<2.5); if(!r) rows.push(r={y,items:[]});
+        r.items.push({x,s:it.str});
+      }
+      rows.sort((a,b)=>b.y-a.y);
+      for(const r of rows) lines.push({page:p, y:r.y, text:r.items.sort((a,b)=>a.x-b.x).map(i=>i.s).join(" ").replace(/\s+/g," ").trim()});
+    }
+  } finally { doc.destroy(); }
+  return lines;
+}
+const CA_NUM="\\d{1,3}(?:\\.\\d{3})*,\\d{2}";
+const CA_TX=new RegExp(`^(\\d{2}-\\d{2}-\\d{2,4}) \\d{2}-\\d{2}-\\d{2,4} (.+?) (${CA_NUM}) (-?${CA_NUM})$`);
+const CA_SALDO=new RegExp(`Saldo Contabil[ií]stico em \\d{2}-\\d{2}-\\d{4} (-?${CA_NUM})`,"i");
+function caStatementToTx(lines){
+  const out=[]; let bal=null, last=null, bad=0, closing=null;
+  for(const l of lines){
+    let m=l.text.match(CA_SALDO);
+    if(m){ if(bal===null) bal=parseNumber(m[1]); else closing=parseNumber(m[1]); last=null; continue; }
+    m=l.text.match(CA_TX);
+    if(m){
+      if(bal===null) throw new Error("não encontrei o saldo inicial do extrato.");
+      const amt=parseNumber(m[3]), nb=parseNumber(m[4]), diff=round2(nb-bal);
+      if(Math.abs(Math.abs(diff)-amt)>0.005) bad++;
+      last={date:parseDate(m[1]), amount:diff<0?-amt:amt, desc:m[2], source:"ca", page:l.page, y:l.y};
+      out.push(last); bal=nb; continue;
+    }
+    // descrições longas continuam na linha de baixo, sem datas nem valores
+    if(last && l.page===last.page && last.y-l.y<14 && !/\d{2}-\d{2}-\d{2}|\d,\d{2}\b|saldo|transport|p[áa]gina/i.test(l.text)){ last.desc+=" "+l.text; last.y=l.y; }
+    else last=null;
+  }
+  if(!out.length) throw new Error("não encontrei movimentos. É o Extracto Integrado do Crédito Agrícola?");
+  if(bad || (closing!==null && Math.abs(closing-bal)>0.005)) throw new Error("os saldos do extrato não batem certo com os movimentos lidos, por isso não importei nada.");
+  return out.map(({page,y,...t})=>t);
+}
+
+/* Exportação CSV da Coverflex: não traz o valor, só o saldo depois de cada movimento.
+   Entre carregamentos, as compras ordenadas por saldo decrescente formam a sequência
+   real (a data de cada linha é a da compra, não a da liquidação), e o valor é a diferença
+   para o saldo anterior. Os movimentos já guardados servem de ponto de partida. */
+function isCoverflexExport(rows){ const h=(rows[0]||[]).map(c=>norm(c)); return h.includes("balance_after") && h.includes("movement_id"); }
+function coverflexToTx(rows, known){
+  const h=rows[0].map(c=>norm(c)), ix=k=>h.indexOf(k);
+  const c={ts:ix("date_day"), id:ix("movement_id"), status:ix("status"), desc:ix("description"), merchant:ix("merchant_name"), bal:ix("balance_after"), op:ix("operation_type")};
+  const mine=new Map(known.filter(t=>t.mid && typeof t.bal==="number").map(t=>[t.mid,{...t, up:t.amount>0, old:true}]));
+  for(const r of rows.slice(1)){
+    const mid=String(r[c.id]??"").trim(); if(!mid || mine.has(mid)) continue;
+    if(/pend|cancel|reject|fail|declin|revers/i.test(String(r[c.status]??""))) continue;
+    const bal=parseNumber(r[c.bal]), ts=String(r[c.ts]??"").trim(), date=parseDate(ts);
+    if(isNaN(bal) || !date) continue;
+    const op=norm(r[c.op]);
+    let desc=String(r[c.merchant]||r[c.desc]||"").replace(/\s+/g," ").trim();
+    if(!desc || /^unknown$/i.test(desc)) desc = op==="topup" ? "Carregamento Coverflex" : "Coverflex";
+    mine.set(mid,{date, ts, mid, bal, up:op!=="spend", desc, source:"cf", id:"cf|"+mid});
+  }
+  const all=[...mine.values()].sort((a,b)=>a.ts<b.ts?-1:a.ts>b.ts?1:0);
+  const segs=[]; let cur=[];
+  for(const m of all){ if(m.up && cur.length){ segs.push(cur); cur=[]; } cur.push(m); }
+  if(cur.length) segs.push(cur);
+  // uma compra feita antes de um carregamento mas liquidada depois tem saldo acima do carregamento
+  for(let i=1;i<segs.length;i++){ const top=segs[i][0]; if(!top.up) continue; const late=segs[i-1].filter(m=>!m.up && m.bal>top.bal); segs[i-1]=segs[i-1].filter(m=>!late.includes(m)); segs[i].push(...late); }
+  const fresh=[]; let prev=null, skipped=0;
+  for(const s of segs){
+    const head=s[0].up ? [s[0]] : [], seq=[...head, ...s.slice(head.length).sort((a,b)=>b.bal-a.bal)];
+    for(const m of seq){
+      const amount = prev===null ? null : round2(m.bal-prev);
+      prev=m.bal;
+      if(m.old) continue;
+      if(amount===null || amount===0 || (amount>0)!==m.up){ skipped++; continue; }
+      const {up, ...t}=m; fresh.push({...t, amount});
+    }
+  }
+  return {tx:fresh, skipped};
+}
+
 function mergeTx(fresh){
   if(state.sample){ state.tx=[]; state.overrides={}; state.sample=false; }
   const ids=new Set(state.tx.map(t=>t.id)); let added=0, dup=0;
@@ -605,7 +705,19 @@ async function importFiles(files, source){
   const fresh=[], errs=[];
   for(const f of files){
     try{
-      let tx=rowsToTx(await readFile(f), source);
+      if(/\.pdf$/i.test(f.name) || f.type==="application/pdf"){
+        fresh.push(...assignIds(caStatementToTx(await pdfLines(f))));
+        continue;
+      }
+      const rows=await readFile(f);
+      if(isCoverflexExport(rows)){
+        const {tx:cf, skipped}=coverflexToTx(rows, [...state.tx, ...fresh]);
+        if(!cf.length && !skipped){ errs.push(`${f.name}: nenhum movimento novo.`); continue; }
+        if(skipped) errs.push(`${f.name}: ${skipped===1?"1 movimento ficou":skipped+" movimentos ficaram"} de fora por não ser possível calcular o valor (normalmente o primeiro do ficheiro). Exporta a partir de uns dias antes para o apanhar.`);
+        fresh.push(...cf);
+        continue;
+      }
+      let tx=rowsToTx(rows, source);
       if(!tx.length){ errs.push(`${f.name}: nenhum movimento reconhecido.`); continue; }
       if(tx.length>3 && tx.every(t=>t.amount>0)){ // ficheiro sem sinais: valores positivos são despesas
         tx.forEach(t=>{ if(!/carregamento|top ?up|reembolso/i.test(t.desc)) t.amount=-t.amount; });

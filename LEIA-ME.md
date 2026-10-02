@@ -30,8 +30,8 @@ Importante: a app instalada e o Safari guardam dados em sítios separados. Usa s
 
 ## 4. Uso mensal
 
-- **Crédito Agrícola:** exporta os movimentos no CA Online (Excel ou CSV) e importa na caixa "CA".
-- **Coverflex:** no Chrome do Mac, usa a extensão `coverflex-downloader` para descarregar o CSV e importa na caixa "CF".
+- **Crédito Agrícola:** importa na caixa "CA" o PDF do extrato mensal (Extracto Integrado) que recebes do banco. A app confere os movimentos com o saldo inicial e final do extrato; se não baterem certo, não importa nada. CSV ou Excel do CA Online continuam a funcionar.
+- **Coverflex:** exporta o CSV na Coverflex e importa na caixa "CF". Este ficheiro não traz o valor de cada movimento, só o saldo depois dele, por isso a app calcula o valor pela diferença de saldos. O primeiro movimento da primeira importação fica de fora, porque não há saldo anterior; nos meses seguintes a app continua a partir dos movimentos já guardados. Para não perder nenhum, exporta sempre a partir de uns dias antes do início do mês.
 - Importar o mesmo período duas vezes não duplica movimentos.
 
 ## 5. Passar dados entre o Mac e o iPhone

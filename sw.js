@@ -1,10 +1,12 @@
 // Guarda a app para funcionar sem internet. Não guarda dados pessoais: esses ficam cifrados no localStorage.
-const VERSION = "contas-v1";
+const VERSION = "contas-v2";
 const SHELL = [
   "./",
   "index.html",
   "manifest.webmanifest",
   "vendor/xlsx.full.min.js",
+  "vendor/pdf.min.js",
+  "vendor/pdf.worker.min.js",
   "icons/icon-192.png",
   "icons/icon-512.png",
   "icons/apple-touch-icon.png"
