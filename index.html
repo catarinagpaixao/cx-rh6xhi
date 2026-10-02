@@ -61,7 +61,10 @@ button:disabled{opacity:.55;cursor:default}
 .gate p{margin:0;color:var(--muted);font-size:.9rem}
 .field{display:flex;flex-direction:column;gap:5px}
 .field span{font-size:.82rem;font-weight:600}
-.field input{width:100%}
+.field input,.field select{width:100%}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.addgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px} .addgrid .wide{grid-column:1/-1}
+.rowdel{padding:2px 7px;font-size:.8rem;color:var(--muted);background:transparent;border-color:transparent} .rowdel:hover{color:var(--neg);border-color:var(--line)}
 .err{color:var(--neg);font-size:.86rem;min-height:1.2em}
 .meter{height:5px;border-radius:3px;background:var(--chip);overflow:hidden}
 .meter div{height:100%;width:0;transition:width .2s,background .2s}
@@ -82,6 +85,7 @@ button:disabled{opacity:.55;cursor:default}
 /* o campo de ficheiro fica invisível por cima do botão: o Safari (sobretudo nas apps da Dock) nem sempre abre o seletor a partir de um campo com display:none */
 .drop input{position:absolute;inset:0;width:100%;height:100%;margin:0;opacity:0;cursor:pointer;font-size:0}
 .ca{--src:var(--accent)} .cf{--src:var(--accent-2)}
+.imp{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:8px 0;border-top:1px solid var(--line)} .imp:first-child{border-top:0} .imp small{display:block;color:var(--muted);word-break:break-all}
 .prompt{margin:0;padding:10px 12px;border-radius:8px;background:var(--chip);color:var(--fg);font-family:var(--mono);font-size:12px;line-height:1.5;white-space:pre-wrap;word-break:break-word;user-select:text;-webkit-user-select:text}
 /* No Mac (rato) a importação faz-se a arrastar: na app da Dock o clique não abre o seletor de ficheiros.
    Em ecrãs táteis (iPhone) não há arrastar, por isso o texto pede um toque. */
@@ -254,15 +258,22 @@ dialog p{margin:0;color:var(--muted);font-size:.9rem}
       <input type="search" id="q" placeholder="Procurar descrição…" aria-label="Procurar">
       <select id="fCat" aria-label="Categoria"></select>
       <select id="fSrc" aria-label="Origem"><option value="">Todas as origens</option><option value="ca">Conta CA</option><option value="cf">Coverflex</option></select>
+      <button class="primary" id="addBtn" type="button">Adicionar movimento</button>
+      <button class="danger" id="delShown" type="button">Apagar estes movimentos</button>
     </div>
     <div class="tablewrap"><table>
-      <thead><tr><th>Data</th><th>Descrição</th><th>Origem</th><th>Categoria</th><th style="text-align:right">Montante</th></tr></thead>
+      <thead><tr><th>Data</th><th>Descrição</th><th>Origem</th><th>Categoria</th><th style="text-align:right">Montante</th><th><span class="sr">Apagar</span></th></tr></thead>
       <tbody id="rows"></tbody>
     </table></div>
     <button class="more" id="more" hidden>Mostrar mais</button>
   </section>
 
   <section class="panel">
+    <details class="rules">
+      <summary>Importações</summary>
+      <p class="help">Cada importação pode ser apagada: saem os movimentos que ela acrescentou e as categorias que lhes mudaste à mão. As regras ficam. Para apagar movimentos importados antes de existir este histórico, filtra a tabela de movimentos (mês, origem, categoria ou texto) e usa "Apagar estes movimentos".</p>
+      <div id="impList"></div>
+    </details>
     <details class="rules">
       <summary>Regras de categorização</summary>
       <p class="help">Cada categoria tem palavras-chave separadas por vírgulas. Cada palavra-chave tem de aparecer no início de uma palavra da descrição; maiúsculas, acentos e símbolos não contam. Se várias baterem certo, ganha a mais comprida (por isso "TRF RENDA" cai em Casa e "UBER EATS" em Restauração, não em Transportes); em empate, ganha a primeira categoria pela ordem abaixo. As regras que crias a partir de um movimento ganham sempre. Transferências enviadas a pessoas contam como despesa (MB WAY / Pessoas) e as recebidas como rendimento; só as transferências entre contas tuas (Revolut, XTB…) ficam fora dos totais. Quando mudas a categoria de um movimento na tabela, podes criar uma regra a partir dele.</p>
@@ -311,6 +322,19 @@ Em date_day põe a data e hora completas do movimento, com milissegundos, como a
   <label class="field" id="dlgField" hidden><span id="dlgLabel">Password</span><input type="password" id="dlgInput" autocomplete="off"></label>
   <div class="err" id="dlgErr"></div>
   <div class="filters" style="justify-content:flex-end"><button value="cancel" type="button" id="dlgCancel">Cancelar</button><button class="primary" id="dlgOk" type="submit">Confirmar</button></div>
+</form></dialog>
+<dialog id="addDlg"><form method="dialog" id="addForm" novalidate>
+  <h2>Adicionar movimento</h2>
+  <div class="addgrid">
+    <label class="field"><span>Data</span><input type="date" id="aDate"></label>
+    <label class="field"><span>Tipo</span><select id="aKind"><option value="-1">Despesa</option><option value="1">Receita</option></select></label>
+    <label class="field"><span>Valor (€)</span><input type="text" id="aAmt" inputmode="decimal" placeholder="12,50" autocomplete="off"></label>
+    <label class="field"><span>Origem</span><select id="aSrc"><option value="ca">Conta CA</option><option value="cf">Coverflex</option></select></label>
+    <label class="field wide"><span>Descrição</span><input type="text" id="aDesc" maxlength="120" autocomplete="off" placeholder="Ex.: jantar com amigos (dinheiro)"></label>
+    <label class="field wide"><span>Categoria</span><select id="aCat"></select></label>
+  </div>
+  <div class="err" id="aErr"></div>
+  <div class="filters" style="justify-content:flex-end"><button type="button" id="aCancel">Cancelar</button><button class="primary" type="submit">Adicionar</button></div>
 </form></dialog>
 <div class="toast" id="toast" hidden></div>
 
@@ -779,7 +803,7 @@ function mergeTx(fresh){
   return {added,dup};
 }
 async function importFiles(files, source){
-  const fresh=[], errs=[]; let fixed=0;
+  const fresh=[], errs=[], imp=Date.now().toString(36); let fixed=0;
   for(const f of files){
     try{
       if(/\.pdf$/i.test(f.name) || f.type==="application/pdf"){
@@ -805,7 +829,10 @@ async function importFiles(files, source){
   }
   let msg="";
   if(fresh.length || fixed){
-    const {added,dup}=mergeTx(fresh); await save();
+    fresh.forEach(t=>t.imp=imp);
+    const {added,dup}=mergeTx(fresh);
+    if(added) (state.imports ||= []).push({id:imp, at:new Date().toISOString(), files:files.map(f=>f.name), n:added});
+    await save();
     if(added) period=latestMonth();
     render(); msg=`${added} movimentos importados`+(dup?`, ${dup} já existiam`:"")+"."+(fixed?` ${fixed===1?"1 valor da Coverflex corrigido":fixed+" valores da Coverflex corrigidos"} com os movimentos que faltavam.`:"");
   }
@@ -836,6 +863,7 @@ $("restoreFile").onchange=async e=>{
   const {added,dup}=mergeTx(data.tx||[]);
   Object.assign(state.overrides, data.overrides||{});
   if(data.rules) for(const k in data.rules){ const mine=new Set(String(state.rules[k]||"").split(",").map(s=>s.trim()).filter(Boolean)); String(data.rules[k]).split(",").map(s=>s.trim()).filter(Boolean).forEach(x=>mine.add(x)); state.rules[k]=[...mine].join(", "); }
+  if(data.imports){ const have=new Set((state.imports||[]).map(i=>i.id)); state.imports=[...(state.imports||[]), ...data.imports.filter(i=>!have.has(i.id))]; }
   if(data.mine) state.mine=[...new Set([...(state.mine||[]), ...data.mine])];
   await save(); period=latestMonth(); renderRules(); render();
   toast(`Cópia restaurada: ${added} movimentos novos`+(dup?`, ${dup} já existiam`:"")+".");
@@ -861,7 +889,7 @@ $("wipeBtn").onclick=async()=>{
 };
 
 /* ---------- vista ---------- */
-let period="all", catFilter="", showN=60;
+let period="all", catFilter="", showN=60, shownRows=[];
 function latestMonth(){ const ms=[...new Set(state.tx.map(t=>ym(t.date)))].sort(); return ms[ms.length-1]||"all"; }
 function startApp(){
   $("gate").hidden=true; $("app").hidden=false;
@@ -871,7 +899,7 @@ function startApp(){
 }
 function render(){
   if(!state) return;
-  RULES=compiledRules();
+  RULES=compiledRules(); renderImports();
   const tx=state.tx.map(t=>({...t, cat:categorize(t), m:ym(t.date)}));
   $("emptyBanner").hidden = tx.length>0;
   $("sampleBanner").hidden = !state.sample;
@@ -936,19 +964,45 @@ function renderTable(cur){
   fc.value=catFilter;
   const q=norm($("q").value), src=$("fSrc").value;
   const rows=cur.filter(t=>(!catFilter||t.cat===catFilter)&&(!src||t.source===src)&&(!q||norm(t.desc).includes(q))).sort((a,b)=>b.date.localeCompare(a.date)||a.amount-b.amount);
+  shownRows=rows; $("delShown").hidden=!rows.length || state.sample;
   $("count").textContent=`${rows.length} movimentos · ${fmt(rows.reduce((s,t)=>s+t.amount,0))}`;
   const opts=CATS.map(c=>`<option>${esc(c.k)}</option>`).join("");
   const shown=rows.slice(0,showN);
   $("rows").innerHTML= rows.length? shown.map((t,i)=>`<tr>
     <td class="num">${t.date.split("-").reverse().join("/")}</td>
     <td class="desc">${esc(t.desc)}</td>
-    <td><span class="src ${t.source}">${t.source==="ca"?"Conta CA":"Coverflex"}</span></td>
+    <td><span class="src ${t.source}">${t.source==="ca"?"Conta CA":"Coverflex"}</span>${t.manual?' <span class="ov">à mão</span>':''}</td>
     <td><select data-i="${i}" aria-label="Categoria">${opts}</select>${state.overrides[t.id]?' <span class="ov">manual</span>':''}</td>
-    <td class="amt num" style="color:${t.amount<0?'var(--fg)':'var(--pos)'}">${fmt(t.amount)}</td></tr>`).join("")
-    : `<tr><td colspan="5" class="empty">${state.tx.length?"Nenhum movimento corresponde aos filtros.":"Os movimentos importados aparecem aqui."}</td></tr>`;
+    <td class="amt num" style="color:${t.amount<0?'var(--fg)':'var(--pos)'}">${fmt(t.amount)}</td>
+    <td><button class="rowdel" type="button" data-d="${i}" title="Apagar este movimento" aria-label="Apagar este movimento">✕</button></td></tr>`).join("")
+    : `<tr><td colspan="6" class="empty">${state.tx.length?"Nenhum movimento corresponde aos filtros.":"Os movimentos importados aparecem aqui."}</td></tr>`;
   $("rows").querySelectorAll("select").forEach(s=>{ const t=shown[+s.dataset.i]; s.value=t.cat;
     s.onchange=async()=>{ state.overrides[t.id]=s.value; await save(); render(); offerRule(t,s.value); }; });
+  $("rows").querySelectorAll("button[data-d]").forEach(b=>{ const t=shown[+b.dataset.d];
+    b.onclick=async()=>{
+      const ok=await ask({title:"Apagar este movimento?", text:`${t.date.split("-").reverse().join("/")} · ${t.desc} · ${fmt(t.amount)}`, ok:"Apagar", danger:true});
+      if(!ok) return; removeTx(x=>x.id===t.id); await save(); render(); toast("Movimento apagado.");
+    }; });
   $("more").hidden=rows.length<=showN;
+}
+function removeTx(pred){
+  const gone=state.tx.filter(pred), ids=new Set(gone.map(t=>t.id));
+  state.tx=state.tx.filter(t=>!ids.has(t.id));
+  for(const id of ids) delete state.overrides[id];
+  if(state.imports) state.imports=state.imports.map(i=>({...i, n:state.tx.filter(t=>t.imp===i.id).length})).filter(i=>i.n>0);
+  return gone.length;
+}
+function renderImports(){
+  const list=(state.imports||[]).slice().reverse();
+  $("impList").innerHTML = list.length ? list.map(i=>`<div class="imp"><span><b>${esc(new Date(i.at).toLocaleString("pt-PT",{dateStyle:"medium",timeStyle:"short"}))}</b> · ${i.n} movimento${i.n===1?"":"s"}<small>${esc(i.files.join(", "))}</small></span><button class="danger" type="button" data-imp="${esc(i.id)}">Apagar</button></div>`).join("")
+    : `<p class="help" style="margin:0">Ainda não há importações registadas.</p>`;
+  $("impList").querySelectorAll("button[data-imp]").forEach(b=>b.onclick=async()=>{
+    const i=state.imports.find(x=>x.id===b.dataset.imp); if(!i) return;
+    const ok=await ask({title:"Apagar esta importação?", text:`Saem ${i.n} movimento${i.n===1?"":"s"} importado${i.n===1?"":"s"} de ${i.files.join(", ")}. Não dá para desfazer, mas podes importar o ficheiro outra vez.`, ok:"Apagar", danger:true});
+    if(!ok) return;
+    const n=removeTx(t=>t.imp===i.id); state.imports=(state.imports||[]).filter(x=>x.id!==i.id);
+    await save(); render(); toast(`${n} movimentos apagados.`);
+  });
 }
 // As duas primeiras palavras seguidas que identificam o comerciante ou a pessoa (sem códigos nem números).
 function keyword(desc){
@@ -985,6 +1039,37 @@ $("q").oninput=()=>{ showN=60; render(); };
 $("fCat").onchange=e=>{ catFilter=e.target.value; showN=60; render(); };
 $("fSrc").onchange=()=>{ showN=60; render(); };
 $("more").onclick=()=>{ showN+=100; render(); };
+/* Movimentos à mão: entram como os importados (contam nos totais, nas regras e nas cópias). Uma categoria
+   escolhida aqui fica como escolha manual; "Automática" deixa as regras decidir. */
+$("addBtn").onclick=()=>{
+  const n=new Date();
+  $("aDate").value=iso(n.getFullYear(),n.getMonth()+1,n.getDate()); $("aAmt").value=""; $("aDesc").value=""; $("aErr").textContent="";
+  $("aCat").innerHTML=`<option value="">Automática (pelas regras)</option>`+CATS.map(c=>`<option>${esc(c.k)}</option>`).join("");
+  $("aSrc").value=$("fSrc").value||"ca";
+  $("addDlg").showModal(); $("aDesc").focus();
+};
+$("aCancel").onclick=()=>$("addDlg").close();
+$("addForm").onsubmit=async e=>{
+  e.preventDefault();
+  const date=parseDate($("aDate").value), v=Math.abs(parseNumber($("aAmt").value)), desc=$("aDesc").value.replace(/\s+/g," ").trim();
+  const err=!date?"Escolhe a data.":!(v>0)?"Escreve um valor maior que zero.":!desc?"Escreve uma descrição.":"";
+  if(err){ $("aErr").textContent=err; return; }
+  const t={date, amount:round2(v*+$("aKind").value), desc, source:$("aSrc").value, manual:true, id:"man|"+Date.now().toString(36)+Math.random().toString(36).slice(2,7)};
+  mergeTx([t]);
+  if($("aCat").value) state.overrides[t.id]=$("aCat").value;
+  await save(); $("addDlg").close();
+  if(period!=="all") period=ym(date);
+  render(); toast("Movimento adicionado.");
+};
+$("delShown").onclick=async()=>{
+  const ids=new Set(shownRows.map(t=>t.id)), n=ids.size; if(!n) return;
+  const all=n===state.tx.length;
+  const ok=await ask({title: all?"Apagar todos os movimentos?":`Apagar ${n} movimentos?`,
+    text:(all?`Saem os ${n} movimentos importados. `:`Saem os ${n} movimentos que a tabela está a mostrar com os filtros atuais (mês, categoria, origem e texto). `)+"A conta, a password e as regras ficam. Não dá para desfazer, mas podes importar os ficheiros outra vez.", ok:"Apagar", danger:true});
+  if(!ok) return;
+  const k=removeTx(t=>ids.has(t.id)); if(!state.tx.length) state.imports=[];
+  await save(); period=latestMonth(); render(); toast(`${k} movimentos apagados.`);
+};
 $("copyCfPrompt").onclick=async()=>{
   const el=$("cfPrompt");
   try{ await navigator.clipboard.writeText(el.textContent); toast("Texto copiado. Cola-o no assistente da Coverflex."); }

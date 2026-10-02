@@ -35,6 +35,8 @@ Na app da Dock, clicar nas caixas de importação não abre a janela para escolh
 - **Crédito Agrícola:** importa na caixa "CA" o PDF do extrato mensal (Extracto Integrado) que recebes do banco. A app confere os movimentos com o saldo inicial e final do extrato; se não baterem certo, não importa nada. CSV ou Excel do CA Online continuam a funcionar.
 - **Coverflex:** exporta o CSV na Coverflex e importa na caixa "CF". Este ficheiro não traz o valor de cada movimento, só o saldo depois dele, por isso a app calcula o valor pela diferença de saldos. O primeiro movimento da primeira importação fica de fora, porque não há saldo anterior; nos meses seguintes a app continua a partir dos movimentos já guardados. Para não perder nenhum, exporta sempre a partir de uns dias antes do início do mês.
 - Importar o mesmo período duas vezes não duplica movimentos.
+- **Movimentos à mão:** na tabela de movimentos, **Adicionar movimento** (por exemplo, despesas pagas em dinheiro).
+- **Apagar:** o ✕ de cada linha apaga esse movimento. **Importações** (em baixo) lista cada importação com um botão para a apagar. **Apagar estes movimentos** apaga tudo o que a tabela está a mostrar com os filtros atuais; com "Todos os meses" e sem filtros, apaga todos os movimentos e mantém a conta e as regras.
 
 ## 5. Passar dados entre o Mac e o iPhone
 
