@@ -129,6 +129,20 @@ button:disabled{opacity:.55;cursor:default}
 .col.sel{background:color-mix(in srgb,var(--fg) 5%,transparent)}
 
 .cats{display:flex;flex-direction:column;gap:9px}
+.subviz{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:22px;margin-top:20px;padding-top:18px;border-top:1px solid var(--line)}
+@media (max-width:600px){.subviz{grid-template-columns:minmax(0,1fr)}}
+.sub h3{font-size:.88rem;font-weight:600;margin:0 0 12px} .sub h3 span{display:block;margin-top:2px;color:var(--muted);font-weight:400;font-size:.78rem}
+.donutwrap{display:flex;gap:14px;align-items:center}
+#donut{width:116px;height:116px;flex:none;overflow:visible}
+#donut circle{fill:none;cursor:pointer;transition:opacity .15s}
+#donut .ctr{font-size:12.5px;font-weight:700;fill:var(--fg);text-anchor:middle} #donut .ctl{font-size:7.5px;fill:var(--muted);text-anchor:middle}
+.dlegend{display:flex;flex-direction:column;gap:6px;font-size:.8rem;min-width:0;flex:1}
+.dl{display:grid;grid-template-columns:10px minmax(0,1fr) 3.2em;gap:7px;align-items:center;cursor:pointer;transition:opacity .15s}
+.dl i{width:10px;height:10px;border-radius:2px} .dl .n{overflow:hidden;text-overflow:ellipsis;white-space:nowrap} .dl .p{color:var(--muted);text-align:right}
+.dim{opacity:.3}
+.top5{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:9px}
+.top5 li{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:1px 10px;font-size:.85rem}
+.top5 .d{overflow:hidden;text-overflow:ellipsis;white-space:nowrap} .top5 small{color:var(--muted);font-size:.74rem} .top5 .a{text-align:right}
 .cat{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 12px;cursor:pointer;padding:2px 0}
 .cat .n{font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .cat .a{text-align:right}
@@ -255,6 +269,11 @@ dialog p{margin:0;color:var(--muted);font-size:.9rem}
         <div class="legend"><span><i style="background:var(--accent)"></i>Conta CA</span><span><i style="background:var(--accent-2)"></i>Refeição</span><span><i style="background:none;border-top:2px solid var(--pos);height:0;border-radius:0"></i>Receitas</span></div>
       </div>
       <div class="chart" id="chart"></div>
+      <div class="subviz">
+        <div class="sub"><h3>Distribuição das despesas <span class="perlbl"></span></h3>
+          <div class="donutwrap"><svg id="donut" viewBox="0 0 120 120" role="img" aria-label="Distribuição das despesas por categoria"></svg><div class="dlegend" id="dlegend"></div></div></div>
+        <div class="sub"><h3>Top 5 despesas <span class="perlbl"></span></h3><ol class="top5" id="top5"></ol></div>
+      </div>
     </div>
     <div class="panel">
       <div class="panel-h"><h2>Por categoria</h2><span class="label" id="catPeriod"></span></div>
@@ -476,6 +495,8 @@ $("authForm").addEventListener("submit", async e=>{
       }
       failures=0; session={key, meta:{user:v.user, salt:v.salt, iter:v.iter}}; state=data;
       if(!state.cats){ state.rules = Object.assign(defaultRules(), state.rules||{}); if((state.rulesV||1)<RULES_V) upgradeRules(); state.cats=defaultCats(); save(); }
+      let recolor=false; for(const c of state.cats) if(c.orig && OLD_COLORS[c.orig]===c.c){ c.c=CATS.find(x=>x.k===c.orig).c; recolor=true; }
+      if(recolor) save();
       startApp();
     }
   } catch(ex){
@@ -532,15 +553,15 @@ function ask({title,text,ok="Confirmar",input=false,label="Password",type="passw
    ===================================================================== */
 const CATS = [
   {k:"Rendimentos", c:"#2d7a46", kw:"vencimento, ordenado, salario, remuneracao, carregamento, top up, topup, reembolso irs, juros credor"},
-  {k:"Supermercado", c:"#3f8f6b", kw:"continente, modelo, pingo doce, lidl, aldi, mercadona, intermarche, minipreco, auchan, jumbo, el corte ingles, spar, coviran, meu super, amanhecer, froiz, celeiro, talho, mercearia, frutaria, padaria"},
-  {k:"Restauração", c:"#d8892b", kw:"restaurante, rest., cafe, pastelaria, snack, tasca, churrasqueira, pizzaria, sushi, mcdonald, burger king, kfc, telepizza, h3, vitaminas, starbucks, padaria portuguesa, uber eats, glovo, bolt food, cervejaria, bar "},
-  {k:"Transportes", c:"#4a7fb5", kw:"galp, bp , repsol, prio, cepsa, shell, via verde, brisa, uber, bolt, cp -, comboios, carris, metro, navegante, fertagus, transtejo, emel, parque, estacionamento, portagem, gira"},
-  {k:"Casa", c:"#7a6bb0", kw:"renda, condominio, edp, endesa, iberdrola, goldenergy, galp energia, epal, smas, aguas de, agua, gas natural, seguro casa, ikea, leroy merlin, aki, bricomarche"},
+  {k:"Supermercado", c:"#008300", kw:"continente, modelo, pingo doce, lidl, aldi, mercadona, intermarche, minipreco, auchan, jumbo, el corte ingles, spar, coviran, meu super, amanhecer, froiz, celeiro, talho, mercearia, frutaria, padaria"},
+  {k:"Restauração", c:"#eb6834", kw:"restaurante, rest., cafe, pastelaria, snack, tasca, churrasqueira, pizzaria, sushi, mcdonald, burger king, kfc, telepizza, h3, vitaminas, starbucks, padaria portuguesa, uber eats, glovo, bolt food, cervejaria, bar "},
+  {k:"Transportes", c:"#2a78d6", kw:"galp, bp , repsol, prio, cepsa, shell, via verde, brisa, uber, bolt, cp -, comboios, carris, metro, navegante, fertagus, transtejo, emel, parque, estacionamento, portagem, gira"},
+  {k:"Casa", c:"#4a3aa7", kw:"renda, condominio, edp, endesa, iberdrola, goldenergy, galp energia, epal, smas, aguas de, agua, gas natural, seguro casa, ikea, leroy merlin, aki, bricomarche"},
   {k:"Telecomunicações", c:"#5b9aa8", kw:"meo, nos comunicacoes, nos sgps, vodafone, nowo, digi, woo, uzo"},
-  {k:"Saúde", c:"#c2557a", kw:"farmacia, cuf, luz saude, lusiadas, hospital, clinica, dentista, wells, optica, multiopticas, medis, multicare, advancecare"},
-  {k:"Subscrições", c:"#9c6b3e", kw:"netflix, spotify, disney, hbo, max.com, prime video, apple.com, icloud, google, youtube, openai, anthropic, claude.ai, ginasio, fitness, holmes place, solinca"},
-  {k:"Compras", c:"#b0794a", kw:"amazon, fnac, worten, radio popular, zara, primark, h&m, decathlon, sport zone, shein, aliexpress, temu, wook, bertrand, mango, pull&bear, ctt"},
-  {k:"Lazer", c:"#5a8f3a", kw:"cinema, nos cinemas, uci, bilheteira, ticketline, blueticket, hotel, booking, airbnb, ryanair, tap , easyjet, museu, teatro"},
+  {k:"Saúde", c:"#e34948", kw:"farmacia, cuf, luz saude, lusiadas, hospital, clinica, dentista, wells, optica, multiopticas, medis, multicare, advancecare"},
+  {k:"Subscrições", c:"#e87ba4", kw:"netflix, spotify, disney, hbo, max.com, prime video, apple.com, icloud, google, youtube, openai, anthropic, claude.ai, ginasio, fitness, holmes place, solinca"},
+  {k:"Compras", c:"#eda100", kw:"amazon, fnac, worten, radio popular, zara, primark, h&m, decathlon, sport zone, shein, aliexpress, temu, wook, bertrand, mango, pull&bear, ctt"},
+  {k:"Lazer", c:"#1baf7a", kw:"cinema, nos cinemas, uci, bilheteira, ticketline, blueticket, hotel, booking, airbnb, ryanair, tap , easyjet, museu, teatro"},
   {k:"MB WAY / Pessoas", c:"#6f8a7a", kw:"mb way, mbway"},
   {k:"Levantamentos", c:"#7d7d6a", kw:"levantamento, lev., lev atm, lev "},
   {k:"Impostos e Estado", c:"#8c5a5a", kw:"autoridade tributaria, financas, seg social, seguranca social, iuc, imi, irs, portal das financas"},
@@ -552,6 +573,8 @@ const CATS = [
    o papel das três especiais fica: "income" recebe entradas sem regra (e as regras dela só valem para
    entradas), "other" recebe despesas sem regra, "transfer" fica fora dos totais. "orig" guarda o nome
    de origem, para "Repor regras de origem" funcionar depois de mudar nomes. */
+// Cores de origem antes da paleta validada (2026-10): contas antigas com estas cores recebem as novas.
+const OLD_COLORS = {"Supermercado": "#3f8f6b", "Restauração": "#d8892b", "Transportes": "#4a7fb5", "Casa": "#7a6bb0", "Saúde": "#c2557a", "Subscrições": "#9c6b3e", "Compras": "#b0794a", "Lazer": "#5a8f3a"};
 const ROLE_OF = {"Rendimentos":"income", "Transferências":"transfer", "Outros":"other"};
 const NEW_COLORS = ["#a0522d","#2f8f9d","#8e5bb0","#b8962e","#5d7fa3","#c06c3e","#6a8e23","#d1495b"];
 function defaultCats(){ return CATS.map(c=>({k:c.k, c:c.c, orig:c.k, ...(ROLE_OF[c.k]?{role:ROLE_OF[c.k]}:{})})); }
@@ -968,7 +991,7 @@ function render(){
     ["Saldo do período", `<span class="${inc-exp>=0?'down':'up'}">${fmt(inc-exp)}</span>`, inc>0? `poupança de ${((inc-exp)/inc*100).toFixed(0)}%` : "&nbsp;"],
     ["Cartão refeição gasto", fmt(meal), mealIn? `carregado ${fmt(mealIn)}` : "Coverflex"]
   ].map(([l,v,d])=>`<div class="kpi"><span class="label">${l}</span><span class="v num">${v}</span><span class="d">${d}</span></div>`).join("");
-  renderChart(tx,months); renderCats(cur,tx,months); renderTable(cur);
+  renderChart(tx,months); renderCats(cur,tx,months); renderDonut(cur); renderTop5(cur); renderTable(cur);
 }
 function niceStep(max){ const raw=max/3, p=Math.pow(10,Math.floor(Math.log10(raw||1))), n=raw/p; return (n<=1?1:n<=2?2:n<=2.5?2.5:n<=5?5:10)*p; }
 function renderChart(tx,months){
@@ -982,6 +1005,37 @@ function renderChart(tx,months){
     <div class="stack" style="height:${(d.ca+d.cf)/top*H}px"><div style="height:${d.ca/tot*100}%;background:var(--accent)"></div><div style="height:${d.cf/tot*100}%;background:var(--accent-2)"></div></div>
     ${d.inc?`<div class="inc" style="bottom:${d.inc/top*H}px"></div>`:""}<span class="m">${ymLabel(d.m)}</span></div>`; }).join("");
   el.querySelectorAll(".col").forEach(c=>c.onclick=()=>{ period=c.dataset.m===period?"all":c.dataset.m; showN=60; render(); });
+}
+/* Donut: as 5 categorias com mais despesa no período + "Outras" (no máximo 6 fatias, para a
+   parte-do-todo se ler de relance). Cor de cada fatia = cor da categoria (a mesma da lista ao lado);
+   a legenda traz nome, % e valor, por isso a cor nunca é a única pista. 2px de separação entre fatias. */
+function renderDonut(cur){
+  const per= period==="all"? "todos os meses" : ymLabel(period,true);
+  document.querySelectorAll(".perlbl").forEach(e=>e.textContent=per);
+  const sums={}; cur.filter(t=>t.amount<0&&!isExcl(t.cat)).forEach(t=>sums[t.cat]=(sums[t.cat]||0)-t.amount);
+  const all=Object.entries(sums).sort((a,b)=>b[1]-a[1]), total=all.reduce((a,[,v])=>a+v,0);
+  const svg=$("donut"), leg=$("dlegend");
+  if(!total){ svg.innerHTML=`<circle cx="60" cy="60" r="43" stroke="var(--chip)" stroke-width="18"/>`; leg.innerHTML=`<span class="empty" style="padding:0">Sem despesas neste período.</span>`; return; }
+  const top=all.slice(0,5), rest=all.slice(5).reduce((a,[,v])=>a+v,0);
+  const slices=top.map(([k,v])=>({k, v, c:colorOf(k)||"var(--muted)"}));
+  if(rest>0) slices.push({k:"", v:rest, c:"color-mix(in srgb,var(--muted) 55%,var(--surface))", label:`Outras (${all.length-5})`});
+  const R=43, C=2*Math.PI*R, gap=slices.length>1?1.6:0; let off=0;
+  svg.innerHTML=slices.map(s=>{ const len=s.v/total*C, seg=Math.max(len-gap,0.01);
+    const el=`<circle cx="60" cy="60" r="${R}" stroke="${s.c}" stroke-width="18" stroke-dasharray="${seg} ${C-seg}" stroke-dashoffset="${-off}" transform="rotate(-90 60 60)" data-k="${esc(s.k)}"><title>${esc(s.label||s.k)}: ${fmt(s.v)} (${(s.v/total*100).toFixed(1)}%)</title></circle>`;
+    off+=len; return el; }).join("")+`<text class="ctr num" x="60" y="62">${fmt(total).replace(/,\d\d(?=\s?€)/,"")}</text><text class="ctl" x="60" y="73">despesas</text>`;
+  leg.innerHTML=slices.map(s=>`<div class="dl" data-k="${esc(s.k)}" role="button" tabindex="0" title="${esc(s.label||s.k)}: ${fmt(s.v)}"><i style="background:${s.c}"></i><span class="n">${esc(s.label||s.k)}</span><span class="p num">${(s.v/total*100).toFixed(0)}%</span></div>`).join("");
+  // passar o rato por uma fatia ou linha da legenda destaca as duas; clicar filtra como a lista
+  const marks=[...svg.querySelectorAll("circle[data-k]"), ...leg.querySelectorAll(".dl")];
+  const hi=k=>marks.forEach(m=>m.classList.toggle("dim", k!==null && m.dataset.k!==k));
+  marks.forEach(m=>{ const k=m.dataset.k;
+    m.onmouseenter=()=>hi(k); m.onmouseleave=()=>hi(null);
+    const go=()=>{ if(!k) return; catFilter=catFilter===k?"":k; showN=60; render(); };
+    m.onclick=go; m.onkeydown=e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); go(); } }; });
+}
+function renderTop5(cur){
+  const top=cur.filter(t=>t.amount<0&&!isExcl(t.cat)).sort((a,b)=>a.amount-b.amount).slice(0,5);
+  $("top5").innerHTML= top.length ? top.map(t=>`<li><span class="d">${esc(t.desc)}</span><span class="a num">${fmt(t.amount)}</span><small>${t.date.split("-").reverse().join("/")} · <i style="display:inline-block;width:8px;height:8px;border-radius:2px;background:${colorOf(t.cat)||"var(--muted)"};margin-right:4px"></i>${esc(t.cat)}</small></li>`).join("")
+    : `<li class="empty" style="padding:0">Sem despesas neste período.</li>`;
 }
 function renderCats(cur,tx,months){
   $("catPeriod").textContent= period==="all"? "todos os meses" : ymLabel(period,true);
