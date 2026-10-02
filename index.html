@@ -82,6 +82,15 @@ button:disabled{opacity:.55;cursor:default}
 /* o campo de ficheiro fica invisível por cima do botão: o Safari (sobretudo nas apps da Dock) nem sempre abre o seletor a partir de um campo com display:none */
 .drop input{position:absolute;inset:0;width:100%;height:100%;margin:0;opacity:0;cursor:pointer;font-size:0}
 .ca{--src:var(--accent)} .cf{--src:var(--accent-2)}
+/* No Mac (rato) a importação faz-se a arrastar: na app da Dock o clique não abre o seletor de ficheiros.
+   Em ecrãs táteis (iPhone) não há arrastar, por isso o texto pede um toque. */
+.t-desk{display:none}
+@media (hover:hover) and (pointer:fine){
+  .t-desk{display:block} .t-touch{display:none}
+  .drop{border-width:2px;border-color:color-mix(in srgb,var(--src) 45%,var(--line));cursor:copy}
+  .drop input{cursor:copy}
+  .drop.over{background:color-mix(in srgb,var(--src) 10%,var(--surface))}
+}
 
 .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:12px;overflow:hidden}
 .kpi{background:var(--surface);padding:14px 16px;display:flex;flex-direction:column;gap:2px}
@@ -210,12 +219,14 @@ dialog p{margin:0;color:var(--muted);font-size:.9rem}
   <section class="imports">
     <label class="drop ca" id="dropCA">
       <span class="dot">CA</span>
-      <span><b>Importar extrato Crédito Agrícola</b><small>Arrasta para aqui o PDF do extrato mensal, ou clica para escolher</small></span>
+      <span class="t-desk"><b>Arrasta para aqui o extrato do Crédito Agrícola</b><small>PDF do extrato mensal. Também podes copiá-lo no Finder (⌘C) e colar aqui (⌘V).</small></span>
+      <span class="t-touch"><b>Importar extrato Crédito Agrícola</b><small>Toca para escolher o PDF do extrato mensal</small></span>
       <input type="file" id="fileCA" accept=".pdf,application/pdf,.csv,.txt,.xls,.xlsx,text/csv" multiple>
     </label>
     <label class="drop cf" id="dropCF">
       <span class="dot">CF</span>
-      <span><b>Importar movimentos Coverflex</b><small>Arrasta para aqui o CSV exportado da Coverflex, ou clica para escolher</small></span>
+      <span class="t-desk"><b>Arrasta para aqui o CSV da Coverflex</b><small>Ficheiro exportado da Coverflex. Também podes copiá-lo no Finder (⌘C) e colar aqui (⌘V).</small></span>
+      <span class="t-touch"><b>Importar movimentos Coverflex</b><small>Toca para escolher o CSV exportado da Coverflex</small></span>
       <input type="file" id="fileCF" accept=".csv,.txt,.xls,.xlsx,text/csv" multiple>
     </label>
   </section>
