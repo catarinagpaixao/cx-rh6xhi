@@ -137,6 +137,8 @@ table{width:100%;border-collapse:collapse;font-size:.88rem}
 th{text-align:left;font-weight:600;color:var(--muted);font-size:.72rem;text-transform:uppercase;letter-spacing:.07em;padding:6px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
 td{padding:7px 8px;border-bottom:1px solid var(--line);vertical-align:middle}
 td.desc{max-width:340px;overflow-wrap:anywhere}
+td.desc .note{display:block;margin-top:2px;color:var(--muted);font-size:.8rem}
+td.acts{white-space:nowrap;text-align:right}
 td.amt{text-align:right;white-space:nowrap}
 td select{padding:3px 6px;font-size:.82rem;max-width:170px}
 .src{display:inline-block;font-size:.7rem;font-weight:600;padding:2px 7px;border-radius:99px;white-space:nowrap}
@@ -255,7 +257,7 @@ dialog p{margin:0;color:var(--muted);font-size:.9rem}
   <section class="panel">
     <div class="panel-h"><h2>Movimentos</h2><span class="label num" id="count"></span></div>
     <div class="filters">
-      <input type="search" id="q" placeholder="Procurar descrição…" aria-label="Procurar">
+      <input type="search" id="q" placeholder="Procurar descrição ou comentário…" aria-label="Procurar">
       <select id="fCat" aria-label="Categoria"></select>
       <select id="fSrc" aria-label="Origem"><option value="">Todas as origens</option><option value="ca">Conta CA</option><option value="cf">Coverflex</option></select>
       <button class="primary" id="addBtn" type="button">Adicionar movimento</button>
@@ -331,6 +333,7 @@ dialog p{margin:0;color:var(--muted);font-size:.9rem}
     <label class="field"><span>Origem</span><select id="aSrc"><option value="ca">Conta CA</option><option value="cf">Coverflex</option></select></label>
     <label class="field wide"><span>Descrição</span><input type="text" id="aDesc" maxlength="120" autocomplete="off" placeholder="Ex.: jantar com amigos (dinheiro)"></label>
     <label class="field wide"><span>Categoria</span><select id="aCat"></select></label>
+    <label class="field wide"><span>Comentário (opcional)</span><input type="text" id="aNote" maxlength="300" autocomplete="off"></label>
   </div>
   <div class="err" id="aErr"></div>
   <div class="filters" style="justify-content:flex-end"><button type="button" id="aCancel">Cancelar</button><button class="primary" type="submit">Adicionar</button></div>
@@ -484,10 +487,10 @@ document.addEventListener("visibilitychange",()=>{
 });
 
 /* ---------- diálogo próprio ---------- */
-function ask({title,text,ok="Confirmar",input=false,label="Password",danger=false,validate}){
+function ask({title,text,ok="Confirmar",input=false,label="Password",type="password",value="",maxlength=null,danger=false,validate}){
   return new Promise(res=>{
     const d=$("dlg"); $("dlgTitle").textContent=title; $("dlgText").textContent=text||"";
-    $("dlgField").hidden=!input; $("dlgLabel").textContent=label; $("dlgInput").value=""; $("dlgErr").textContent="";
+    $("dlgField").hidden=!input; $("dlgLabel").textContent=label; const inp=$("dlgInput"); inp.type=type; inp.value=value; if(maxlength) inp.maxLength=maxlength; else inp.removeAttribute("maxlength"); $("dlgErr").textContent="";
     const okb=$("dlgOk"); okb.textContent=ok; okb.className= danger? "danger":"primary";
     const done=v=>{ d.close(); $("dlgForm").onsubmit=null; $("dlgCancel").onclick=null; res(v); };
     $("dlgCancel").onclick=()=>done(input?null:false);
@@ -867,6 +870,7 @@ $("restoreFile").onchange=async e=>{
   Object.assign(state.overrides, data.overrides||{});
   if(data.rules) for(const k in data.rules){ const mine=new Set(String(state.rules[k]||"").split(",").map(s=>s.trim()).filter(Boolean)); String(data.rules[k]).split(",").map(s=>s.trim()).filter(Boolean).forEach(x=>mine.add(x)); state.rules[k]=[...mine].join(", "); }
   if(data.imports){ const have=new Set((state.imports||[]).map(i=>i.id)); state.imports=[...(state.imports||[]), ...data.imports.filter(i=>!have.has(i.id))]; }
+  if(data.notes) state.notes=Object.assign({}, data.notes, state.notes||{});
   if(data.mine) state.mine=[...new Set([...(state.mine||[]), ...data.mine])];
   await save(); period=latestMonth(); renderRules(); render();
   toast(`Cópia restaurada: ${added} movimentos novos`+(dup?`, ${dup} já existiam`:"")+".");
@@ -965,22 +969,30 @@ function renderTable(cur){
   const fc=$("fCat");
   fc.innerHTML=`<option value="">Todas as categorias</option>`+CATS.map(c=>`<option>${esc(c.k)}</option>`).join("");
   fc.value=catFilter;
-  const q=norm($("q").value), src=$("fSrc").value;
-  const rows=cur.filter(t=>(!catFilter||t.cat===catFilter)&&(!src||t.source===src)&&(!q||norm(t.desc).includes(q))).sort((a,b)=>b.date.localeCompare(a.date)||a.amount-b.amount);
+  const q=norm($("q").value), src=$("fSrc").value, notes=state.notes||{};
+  const rows=cur.filter(t=>(!catFilter||t.cat===catFilter)&&(!src||t.source===src)&&(!q||norm(t.desc).includes(q)||norm(notes[t.id]).includes(q))).sort((a,b)=>b.date.localeCompare(a.date)||a.amount-b.amount);
   shownRows=rows; $("delShown").hidden=!rows.length || state.sample;
   $("count").textContent=`${rows.length} movimentos · ${fmt(rows.reduce((s,t)=>s+t.amount,0))}`;
   const opts=CATS.map(c=>`<option>${esc(c.k)}</option>`).join("");
   const shown=rows.slice(0,showN);
   $("rows").innerHTML= rows.length? shown.map((t,i)=>`<tr>
     <td class="num">${t.date.split("-").reverse().join("/")}</td>
-    <td class="desc">${esc(t.desc)}</td>
+    <td class="desc">${esc(t.desc)}${notes[t.id]?`<span class="note">${esc(notes[t.id])}</span>`:""}</td>
     <td><span class="src ${t.source}">${t.source==="ca"?"Conta CA":"Coverflex"}</span>${t.manual?' <span class="ov">à mão</span>':''}</td>
     <td><select data-i="${i}" aria-label="Categoria">${opts}</select>${state.overrides[t.id]?' <span class="ov">manual</span>':''}</td>
     <td class="amt num" style="color:${t.amount<0?'var(--fg)':'var(--pos)'}">${fmt(t.amount)}</td>
-    <td><button class="rowdel" type="button" data-d="${i}" title="Apagar este movimento" aria-label="Apagar este movimento">✕</button></td></tr>`).join("")
+    <td class="acts"><button class="rowdel" type="button" data-n="${i}" title="${notes[t.id]?"Editar comentário":"Escrever comentário"}" aria-label="Comentário">✎</button><button class="rowdel" type="button" data-d="${i}" title="Apagar este movimento" aria-label="Apagar este movimento">✕</button></td></tr>`).join("")
     : `<tr><td colspan="6" class="empty">${state.tx.length?"Nenhum movimento corresponde aos filtros.":"Os movimentos importados aparecem aqui."}</td></tr>`;
   $("rows").querySelectorAll("select").forEach(s=>{ const t=shown[+s.dataset.i]; s.value=t.cat;
     s.onchange=async()=>{ state.overrides[t.id]=s.value; await save(); render(); offerRule(t,s.value); }; });
+  $("rows").querySelectorAll("button[data-n]").forEach(b=>{ const t=shown[+b.dataset.n];
+    b.onclick=async()=>{
+      const v=await ask({title:"Comentário", text:`${t.date.split("-").reverse().join("/")} · ${t.desc} · ${fmt(t.amount)}`, input:true, type:"text", label:"Comentário (deixa vazio para apagar)", value:(state.notes||{})[t.id]||"", maxlength:300, ok:"Guardar"});
+      if(v===null) return;
+      const n=v.replace(/\s+/g," ").trim(); state.notes ||= {};
+      if(n) state.notes[t.id]=n; else delete state.notes[t.id];
+      await save(); render(); toast(n?"Comentário guardado.":"Comentário apagado.");
+    }; });
   $("rows").querySelectorAll("button[data-d]").forEach(b=>{ const t=shown[+b.dataset.d];
     b.onclick=async()=>{
       const ok=await ask({title:"Apagar este movimento?", text:`${t.date.split("-").reverse().join("/")} · ${t.desc} · ${fmt(t.amount)}`, ok:"Apagar", danger:true});
@@ -991,7 +1003,7 @@ function renderTable(cur){
 function removeTx(pred){
   const gone=state.tx.filter(pred), ids=new Set(gone.map(t=>t.id));
   state.tx=state.tx.filter(t=>!ids.has(t.id));
-  for(const id of ids) delete state.overrides[id];
+  for(const id of ids){ delete state.overrides[id]; if(state.notes) delete state.notes[id]; }
   if(state.imports) state.imports=state.imports.map(i=>({...i, n:state.tx.filter(t=>t.imp===i.id).length})).filter(i=>i.n>0);
   return gone.length;
 }
@@ -1046,7 +1058,7 @@ $("more").onclick=()=>{ showN+=100; render(); };
    escolhida aqui fica como escolha manual; "Automática" deixa as regras decidir. */
 $("addBtn").onclick=()=>{
   const n=new Date();
-  $("aDate").value=iso(n.getFullYear(),n.getMonth()+1,n.getDate()); $("aAmt").value=""; $("aDesc").value=""; $("aErr").textContent="";
+  $("aDate").value=iso(n.getFullYear(),n.getMonth()+1,n.getDate()); $("aAmt").value=""; $("aDesc").value=""; $("aNote").value=""; $("aErr").textContent="";
   $("aCat").innerHTML=`<option value="">Automática (pelas regras)</option>`+CATS.map(c=>`<option>${esc(c.k)}</option>`).join("");
   $("aSrc").value=$("fSrc").value||"ca";
   $("addDlg").showModal(); $("aDesc").focus();
@@ -1060,6 +1072,7 @@ $("addForm").onsubmit=async e=>{
   const t={date, amount:round2(v*+$("aKind").value), desc, source:$("aSrc").value, manual:true, id:"man|"+Date.now().toString(36)+Math.random().toString(36).slice(2,7)};
   mergeTx([t]);
   if($("aCat").value) state.overrides[t.id]=$("aCat").value;
+  const note=$("aNote").value.replace(/\s+/g," ").trim(); if(note) (state.notes ||= {})[t.id]=note;
   await save(); $("addDlg").close();
   if(period!=="all") period=ym(date);
   render(); toast("Movimento adicionado.");

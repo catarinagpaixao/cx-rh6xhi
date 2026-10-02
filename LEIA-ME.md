@@ -36,6 +36,7 @@ Na app da Dock, clicar nas caixas de importação não abre a janela para escolh
 - **Coverflex:** pede o CSV ao assistente da Coverflex com o texto da secção "Como exportar os extratos" (escolhe lá o mês; por omissão é o mês anterior) e importa-o na caixa "CF". Pede um mês completo de cada vez, como o extrato do CA. O ficheiro não traz o valor de cada movimento, só o saldo depois dele, por isso a app calcula o valor pela diferença de saldos: importa os meses por ordem, porque o primeiro movimento de um mês só tem valor se o mês anterior já estiver importado.
 - Importar o mesmo período duas vezes não duplica movimentos.
 - **Movimentos à mão:** na tabela de movimentos, **Adicionar movimento** (por exemplo, despesas pagas em dinheiro).
+- **Comentários:** o ✎ de cada linha escreve ou edita um comentário, que aparece por baixo da descrição. A pesquisa também procura nos comentários, e voltar a importar um ficheiro não os apaga.
 - **Apagar:** o ✕ de cada linha apaga esse movimento. **Importações** (em baixo) lista cada importação com um botão para a apagar. **Apagar estes movimentos** apaga tudo o que a tabela está a mostrar com os filtros atuais; com "Todos os meses" e sem filtros, apaga todos os movimentos e mantém a conta e as regras.
 
 ## 5. Passar dados entre o Mac e o iPhone
