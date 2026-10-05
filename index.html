@@ -152,6 +152,12 @@ dialog.wide{width:min(560px,calc(100% - 32px))}
 .prow{display:grid;grid-template-columns:minmax(0,1fr) 170px 110px 90px;gap:10px;align-items:center;padding:9px 0;border-top:1px solid var(--line);font-size:.88rem}
 .prow:first-child{border-top:0} .prow small{display:block;color:var(--muted)} .prow select{padding:3px 6px;font-size:.82rem} .prow .num{text-align:right}
 .drop.rc{--src:var(--biz)}
+.badge{display:inline-block;margin-left:6px;min-width:18px;padding:0 5px;border-radius:99px;background:var(--biz);color:var(--bg);font-size:.7rem;line-height:18px;text-align:center;vertical-align:1px}
+.match{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1.2fr) auto;gap:10px 14px;align-items:center;padding:10px 0;border-top:1px solid var(--line);font-size:.88rem}
+.match:first-child{border-top:0} .match small{display:block;color:var(--muted)} .match select{width:100%;padding:5px 8px;font-size:.85rem} .match .arrow{color:var(--muted)}
+.match .acts{display:flex;gap:6px} .ok{color:var(--pos)}
+@media (max-width:700px){ .match{grid-template-columns:minmax(0,1fr)} .match .arrow{display:none} }
+.paybox{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:.88rem}
 .rrow{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1.5fr) 100px 100px 110px 104px;gap:10px;align-items:center;padding:9px 0;border-top:1px solid var(--line);font-size:.88rem}
 .rrow:first-child{border-top:0} .rrow small{display:block;color:var(--muted);overflow-wrap:anywhere} .rrow .num{text-align:right} .rrow.void{opacity:.55}
 .rhead{font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;font-weight:600;padding-top:0}
@@ -356,7 +362,7 @@ dialog p{margin:0;color:var(--muted);font-size:.9rem}
   </div>
 
   <div class="view" data-view="negocio" hidden>
-  <nav class="tabs" id="bizNav" aria-label="Negócio"><a href="#negocio" data-s="painel">Painel</a><a href="#negocio/clientes" data-s="clientes">Clientes</a><a href="#negocio/projetos" data-s="projetos">Projetos</a><a href="#negocio/recibos" data-s="recibos">Recibos</a></nav>
+  <nav class="tabs" id="bizNav" aria-label="Negócio"><a href="#negocio" data-s="painel">Painel</a><a href="#negocio/clientes" data-s="clientes">Clientes</a><a href="#negocio/projetos" data-s="projetos">Projetos</a><a href="#negocio/recibos" data-s="recibos">Recibos<span class="badge" id="rcBadge" hidden></span></a></nav>
   <div class="subview" data-sub="painel">
   <section class="kpis" id="bizKpis"></section>
   <section class="panel">
@@ -420,6 +426,11 @@ dialog p{margin:0;color:var(--muted);font-size:.9rem}
     </label>
   </section>
   <section class="kpis" id="rcKpis"></section>
+  <section class="panel" id="rcMatchPanel" hidden>
+    <div class="panel-h"><h2>Pagamentos encontrados no extrato</h2><span class="label num" id="rcMatchCount"></span></div>
+    <p class="help" style="margin:0">Entradas na conta com o valor a receber do recibo (o total menos a retenção na fonte), a partir de 10 dias antes da data da fatura-recibo (ou da data da fatura). Ao confirmar, o recibo fica recebido e o movimento passa para o negócio, em Receitas do negócio.</p>
+    <div id="rcMatches"></div>
+  </section>
   <section class="panel">
     <div class="panel-h"><h2>Recibos verdes</h2><span class="label num" id="rcCount"></span></div>
     <div class="filters">
@@ -567,6 +578,7 @@ dialog p{margin:0;color:var(--muted);font-size:.9rem}
     <label class="field"><span>IVA (€)</span><input type="text" id="rcIva" inputmode="decimal" autocomplete="off" placeholder="0,00"></label>
     <label class="field"><span>Retenção na fonte (€)</span><input type="text" id="rcRet" inputmode="decimal" autocomplete="off" placeholder="0,00"></label>
     <div class="field"><span>Total do documento</span><output class="num rcout" id="rcTotal"></output></div>
+    <div class="field wide"><span>Pagamento no extrato</span><div id="rcPay"></div></div>
   </div>
   <p class="help" id="rcSum" style="margin:0"></p>
   <div class="err" id="rcErr"></div>
@@ -866,11 +878,14 @@ function ruleMatch(t, biz){
 /* Âmbito (pessoal ou negócio): o escolhido à mão ganha; depois a categoria escolhida à mão; antes do
    início de atividade é sempre pessoal; a partir daí, é negócio se a regra que bate certo for do negócio. */
 function autoScope(t){
+  if(LINKED.has(t.id)) return "biz";
   const o=state.overrides[t.id];
   if(o && cats().some(c=>c.k===o)) return isBiz(o)? "biz" : "personal";
   if(t.date < (state.bizStart||"")) return "personal";
   const r=ruleMatch(t); return r && isBiz(r) ? "biz" : "personal";
 }
+let LINKED=new Set(); // ids dos movimentos ligados a um recibo verde
+const refreshLinked = () => { LINKED=new Set(((state.biz||{}).receipts||[]).filter(r=>r.txId).map(r=>r.txId)); };
 const scopeOf = t => (state.scope||{})[t.id] || autoScope(t);
 // Guarda o âmbito à mão só quando difere do automático, para as regras continuarem a valer no resto.
 function setScope(t, sc){
@@ -1114,7 +1129,7 @@ function coverflexToTx(rows, known){
 }
 
 function mergeTx(fresh){
-  if(state.sample){ state.tx=[]; state.overrides={}; state.scope={}; state.sample=false; }
+  if(state.sample){ dropLinks(()=>true); state.tx=[]; state.overrides={}; state.scope={}; state.sample=false; }
   const ids=new Set(state.tx.map(t=>t.id)); let added=0, dup=0;
   for(const t of fresh){ if(ids.has(t.id)) dup++; else { state.tx.push(t); ids.add(t.id); added++; } }
   return {added,dup};
@@ -1155,7 +1170,9 @@ async function importFiles(files, source){
     if(added) (state.imports ||= []).push({id:imp, at:new Date().toISOString(), files:files.map(f=>f.name), n:added});
     await save();
     if(added) period=latestMonth();
-    render(); msg=`${added} movimentos importados`+(dup?`, ${dup} já existiam`:"")+"."+(fixed?` ${fixed===1?"1 valor da Coverflex corrigido":fixed+" valores da Coverflex corrigidos"} com os movimentos que faltavam.`:"");
+    render(); msg=`${added} movimento${added===1?"":"s"} importado${added===1?"":"s"}`+(dup?`, ${dup} já existiam`:"")+"."+(fixed?` ${fixed===1?"1 valor da Coverflex corrigido":fixed+" valores da Coverflex corrigidos"} com os movimentos que faltavam.`:"");
+    const nm=added ? rcMatches().length : 0;
+    if(nm) msg+=` ${nm===1?"1 recibo verde tem":nm+" recibos verdes têm"} o pagamento neste extrato: confirma em Negócio › Recibos.`;
   }
   if(receipts.length){ if(msg||errs.length) toast((msg+" "+errs.join(" ")).trim()); await importReceipts(receipts); return; }
   toast((msg+" "+errs.join(" ")).trim() || "Nada importado.");
@@ -1247,11 +1264,12 @@ addEventListener("hashchange",()=>{ if(!session) return; setView(location.hash.s
 const kpiHtml = ([l,v,d,href]) => href
   ? `<a class="kpi" href="${href}"><span class="label">${l}</span><span class="v num">${v}</span><span class="d">${d}</span></a>`
   : `<div class="kpi"><span class="label">${l}</span><span class="v num">${v}</span><span class="d">${d}</span></div>`;
+const nMov = n => `${n} movimento${n===1?"":"s"}`;
 const sumIn = list => list.filter(t=>t.amount>0).reduce((s,t)=>s+t.amount,0);
 const sumOut = list => list.filter(t=>t.amount<0).reduce((s,t)=>s-t.amount,0);
 function render(){
   if(!state) return;
-  RULES=compiledRules(); renderImports();
+  RULES=compiledRules(); refreshLinked(); renderImports();
   const tx=viewTx().map(t=>{ const sc=scopeOf(t); return {...t, sc, cat:categorize(t,sc), m:ym(t.date)}; });
   $("emptyBanner").hidden = tx.length>0;
   $("sampleBanner").hidden = !state.sample;
@@ -1279,8 +1297,8 @@ function render(){
     ["Negócio", `<span class="${bRes>=0?'down':'up'}">${fmt(bRes)}</span>`, bcur.length? `entradas ${fmt(bIn)} · despesas ${fmt(bOut)}` : "sem movimentos neste período", "#negocio"]
   ].map(kpiHtml).join("");
   $("bizKpis").innerHTML=[
-    ["Entradas do negócio", fmt(bIn), `${bcur.filter(t=>t.amount>0).length} movimentos`],
-    ["Despesas do negócio", fmt(bOut), `${bcur.filter(t=>t.amount<0).length} movimentos`],
+    ["Entradas do negócio", fmt(bIn), nMov(bcur.filter(t=>t.amount>0).length)],
+    ["Despesas do negócio", fmt(bOut), nMov(bcur.filter(t=>t.amount<0).length)],
     ["Resultado", `<span class="${bRes>=0?'down':'up'}">${fmt(bRes)}</span>`, bIn>0? `margem de ${(bRes/bIn*100).toFixed(0)}%` : "&nbsp;"],
     ["Início de atividade", state.bizStart.split("-").reverse().join("/"), "antes desta data, tudo é pessoal"]
   ].map(kpiHtml).join("");
@@ -1365,11 +1383,11 @@ function renderTable(cur){
   const rows=cur.filter(t=>(!sf||t.sc===sf)&&(!catFilter||t.cat===catFilter)&&(!src||t.source===src)&&(!q||norm(t.desc).includes(q)||norm(notes[t.id]).includes(q))).sort((a,b)=>b.date.localeCompare(a.date)||a.amount-b.amount);
   shownRows=rows; $("delShown").hidden=!rows.length || state.sample;
   $("count").textContent=`${rows.length} movimentos · ${fmt(rows.reduce((s,t)=>s+t.amount,0))}`;
-  const opts=catOptions();
+  const opts=catOptions(), rmap=new Map(biz().receipts.filter(r=>r.txId).map(r=>[r.txId,r.number]));
   const shown=rows.slice(0,showN);
   $("rows").innerHTML= rows.length? shown.map((t,i)=>`<tr>
     <td class="num">${t.date.split("-").reverse().join("/")}</td>
-    <td class="desc">${esc(t.desc)}${t.parent?`<span class="part">parte ${t.part+1}/${t.parts}</span>`:""}${notes[t.id]?`<span class="note">${esc(notes[t.id])}</span>`:""}</td>
+    <td class="desc">${esc(t.desc)}${t.parent?`<span class="part">parte ${t.part+1}/${t.parts}</span>`:""}${rmap.has(t.id)?`<span class="part" style="color:var(--biz)" title="Pagamento deste recibo verde">recibo ${esc(rmap.get(t.id))}</span>`:""}${notes[t.id]?`<span class="note">${esc(notes[t.id])}</span>`:""}</td>
     <td><span class="src ${t.source}">${t.source==="ca"?"Conta CA":"Coverflex"}</span>${t.manual?' <span class="ov">à mão</span>':''}</td>
     <td><button type="button" class="scp ${t.sc}" data-sc="${i}" title="Âmbito: carrega para passar para ${t.sc==="biz"?"pessoal":"negócio"}">${t.sc==="biz"?"Negócio":"Pessoal"}</button><select data-i="${i}" aria-label="Categoria">${opts}</select>${state.overrides[t.id]===t.cat?' <span class="ov">manual</span>':''}</td>
     <td class="amt num" style="color:${t.amount<0?'var(--fg)':'var(--pos)'}">${fmt(t.amount)}</td>
@@ -1400,7 +1418,7 @@ function renderTable(cur){
     b.onclick=async()=>{
       const orig=t.parent && state.tx.find(x=>x.id===t.parent);
       const ok=await ask({title:"Apagar este movimento?", text: orig ? `Esta é uma parte de ${orig.date.split("-").reverse().join("/")} · ${orig.desc} · ${fmt(orig.amount)}. Sai o movimento inteiro, com todas as partes. Para juntar as partes outra vez, usa antes a tesoura e "Desfazer divisão".` : `${t.date.split("-").reverse().join("/")} · ${t.desc} · ${fmt(t.amount)}`, ok:"Apagar", danger:true});
-      if(!ok) return; removeTx(x=>x.id===(t.parent||t.id)); await save(); render(); toast("Movimento apagado.");
+      if(!ok) return; removeTx(x=>x.id===(t.parent||t.id)); await save(); render(); toast("Movimento apagado."+linkNote());
     }; });
   $("more").hidden=rows.length<=showN;
 }
@@ -1419,12 +1437,14 @@ function viewTx(){
   });
 }
 function clearSplit(id){
+  dropLinks(x=>x.startsWith(id+"~"));
   if(state.splits) delete state.splits[id];
   for(const m of [state.overrides, state.notes||{}, state.scope||{}]) for(const k in m) if(k.startsWith(id+"~")) delete m[k];
 }
 function removeTx(pred){
   const gone=state.tx.filter(pred), ids=new Set(gone.map(t=>t.id));
   state.tx=state.tx.filter(t=>!ids.has(t.id));
+  dropLinks(x=>ids.has(x));
   for(const id of ids){ delete state.overrides[id]; if(state.notes) delete state.notes[id]; if(state.scope) delete state.scope[id]; clearSplit(id); }
   if(state.imports) state.imports=state.imports.map(i=>({...i, n:state.tx.filter(t=>t.imp===i.id).length})).filter(i=>i.n>0);
   return gone.length;
@@ -1438,7 +1458,7 @@ function renderImports(){
     const ok=await ask({title:"Apagar esta importação?", text:`Saem ${i.n} movimento${i.n===1?"":"s"} importado${i.n===1?"":"s"} de ${i.files.join(", ")}. Não dá para desfazer, mas podes importar o ficheiro outra vez.`, ok:"Apagar", danger:true});
     if(!ok) return;
     const n=removeTx(t=>t.imp===i.id); state.imports=(state.imports||[]).filter(x=>x.id!==i.id);
-    await save(); render(); toast(`${n} movimentos apagados.`);
+    await save(); render(); toast(`${n} movimentos apagados.`+linkNote());
   });
 }
 // As duas primeiras palavras seguidas que identificam o comerciante ou a pessoa (sem códigos nem números).
@@ -1857,7 +1877,7 @@ function renderReceipts(){
   const q=norm($("rcQ").value), st=$("rcSt").value, cn=r=>(clientById(r.clientId)||{name:"(cliente apagado)"}).name, pn=r=>(projectById(r.projectId)||{}).name||"";
   const list=inY.filter(r=>(!st||r.status===st) && (!q||[r.number,cn(r),pn(r),r.desc].some(v=>norm(v).includes(q))))
     .sort((a,b)=>b.date.localeCompare(a.date)||b.number.localeCompare(a.number,"pt",{numeric:true}));
-  $("rcCount").textContent=nr(list.length);
+  $("rcCount").textContent=nr(list.length); renderMatches();
   $("rcList").innerHTML= list.length ? `<div class="rrow rhead"><span>Número</span><span>Cliente</span><span class="num rb">Base</span><span class="num rr">Retenção</span><span class="num">A receber</span><span class="rs">Estado</span></div>`+list.map(r=>`<div class="rrow${r.status==="void"?" void":""}">
       <div><button type="button" class="lnk" data-rc="${r.id}">${esc(r.number)}</button><small>${dmy(r.date)} · ${r.type==="F"?"Fatura":"Fatura-recibo"}</small></div>
       <div>${esc(cn(r))}<small>${esc(pn(r)||r.desc||"")}</small></div>
@@ -1898,7 +1918,7 @@ function openReceipt(id, p=null){
   if(p) for(const k of p.miss) if(!(k==="nif" && match)) $(RC_FIELDS[k]).classList.add("miss");
   const notes=[p&&p.miss.length?"Confirma os campos assinalados: não os encontrei no PDF.":"", p?.warn||""].filter(Boolean).join(" ");
   $("rcWarn").textContent=notes; $("rcWarn").hidden=!notes;
-  $("rcDel").hidden=!r; $("rcErr").textContent=""; rcUpdate();
+  $("rcDel").hidden=!r; $("rcErr").textContent=""; rcPick=""; rcUpdate(); renderRcPay();
   $("rcDlg").showModal();
   return new Promise(res=>rcDone=res);
 }
@@ -1926,7 +1946,7 @@ function rcUpdate(){
 function rcNewClient(pre){
   openClient(null, c=>{ fillRcClients(c.id); fillRcProj(""); $("rcCli").classList.remove("miss"); rcUpdate(); }, pre);
 }
-["rcBase","rcIva","rcRet","rcNum","rcDate"].forEach(i=>$(i).addEventListener("input",()=>{ $(i).classList.remove("miss"); rcUpdate(); }));
+["rcBase","rcIva","rcRet","rcNum","rcDate"].forEach(i=>$(i).addEventListener("input",()=>{ $(i).classList.remove("miss"); rcUpdate(); if(i!=="rcNum") renderRcPay(); }));
 $("rcStatus").onchange=()=>{ if($("rcStatus").value==="paid" && !$("rcPaid").value) $("rcPaid").value=today(); rcUpdate(); };
 $("rcCli").onchange=()=>{
   if($("rcCli").value==="__new"){ $("rcCli").value=""; rcNewClient(null); return; }
@@ -1944,15 +1964,106 @@ $("rcForm").onsubmit=async e=>{
   Object.assign(r, {type:$("rcType").value, number, date, clientId:cli, projectId:$("rcProj").value, desc:$("rcDesc").value.replace(/\s+/g," ").trim(),
     base:v.base, iva:v.iva, ret:v.ret, total:v.total, status, paidAt: status==="paid" ? paidAt : "", at:Date.now()});
   if(!editingRc){ if(rcParsed?.file) r.file=rcParsed.file; biz().receipts.push(r); }
+  // pagamento: ligar o movimento escolhido; um recibo que deixa de estar recebido perde a ligação
+  if(r.txId && status!=="paid"){ const keep={status, paidAt:r.paidAt}; r.paidByLink=false; unlinkReceipt(r); Object.assign(r, keep); }
+  const pick=rcPick && viewTx().find(x=>x.id===rcPick);
+  if(pick && status!=="void"){ const userPaid=status==="paid"; linkReceipt(r, pick); if(userPaid){ r.status="paid"; r.paidAt=paidAt; r.paidByLink=false; } }
   if(rcParsed?.emit && !biz().myNif) biz().myNif=rcParsed.emit; // o teu NIF, para não o confundir com o do cliente
   rcSaved=true; await save(); $("rcDlg").close(); render();
   if(!rcParsed) toast(editingRc ? "Recibo guardado." : `Recibo ${number} criado.`);
 };
 $("rcDel").onclick=async()=>{
   const r=editingRc; $("rcDlg").close();
-  if(!await ask({title:`Apagar o recibo ${r.number}?`, text:"Sai só da app; no Portal das Finanças continua emitido. Se o anulaste lá, muda antes o estado para Anulado. Não dá para desfazer.", ok:"Apagar", danger:true})) return;
+  if(!await ask({title:`Apagar o recibo ${r.number}?`, text:"Sai só da app; no Portal das Finanças continua emitido. Se o anulaste lá, muda antes o estado para Anulado."+(r.txId?" O movimento do pagamento volta a ser categorizado pelas regras.":"")+" Não dá para desfazer.", ok:"Apagar", danger:true})) return;
+  if(r.txId) unlinkReceipt(r);
   forget("receipts", r.id); await save(); render(); toast("Recibo apagado.");
 };
+
+/* ---------- reconciliação: recibo ↔ movimento do extrato ----------
+   Um recibo por receber (ou recebido sem pagamento ligado) procura entradas da conta CA com o valor a
+   receber (total − retenção), entre 10 dias antes e 120 depois da data (a fatura-recibo emite-se muitas
+   vezes depois de o dinheiro entrar; numa fatura, só a partir da data). Os que têm o nome do cliente (ou o
+   "nome no extrato") na descrição vêm primeiro. Ligar marca o recibo como recebido e põe o movimento em
+   Receitas do negócio; desligar repõe as duas coisas. */
+const addDays = (d,n) => { const x=new Date(d+"T12:00:00"); x.setDate(x.getDate()+n); return iso(x.getFullYear(),x.getMonth()+1,x.getDate()); };
+const dayGap = (a,b) => Math.round((new Date(b+"T12:00:00")-new Date(a+"T12:00:00"))/864e5);
+const NAME_STOP=new Set(["lda","limitada","unipessoal","sa","sociedade","comercio","servicos","de","da","do","das","dos","e"]);
+function nameScore(r, t){
+  const c=clientById(r.clientId); if(!c) return 0;
+  const d=" "+clean(t.desc)+" ";
+  if(splitKw(c.aliases).map(clean).some(a=>a && d.includes(" "+a))) return 3;
+  const ws=clean(c.name).split(" ").filter(w=>w.length>=3 && !NAME_STOP.has(w));
+  return ws.some(w=>d.includes(" "+w+" ")) ? 2 : 0;
+}
+function rcCandidates(r, txs){
+  const net=rcNet(r), lo=addDays(r.date, r.type==="F"?0:-10), hi=addDays(r.date,120), no=new Set(r.rejected||[]);
+  return txs.filter(t=>t.source==="ca" && t.amount>0 && Math.abs(t.amount-net)<0.005 && t.date>=lo && t.date<=hi && !LINKED.has(t.id) && !no.has(t.id))
+    .map(t=>({t, score:nameScore(r,t), gap:Math.abs(dayGap(r.date,t.date))}))
+    .sort((a,b)=>b.score-a.score || a.gap-b.gap);
+}
+const rcOpen = r => r.status!=="void" && !r.txId;
+function rcMatches(){
+  const txs=viewTx();
+  return biz().receipts.filter(rcOpen).map(r=>({r, cands:rcCandidates(r,txs)})).filter(m=>m.cands.length).sort((a,b)=>a.r.date.localeCompare(b.r.date));
+}
+const txLabel = t => `${dmy(t.date)} · ${t.desc} · ${fmt(t.amount)}`;
+function linkReceipt(r, t){
+  if(r.txId) unlinkReceipt(r);
+  r.txId=t.id; r.at=Date.now();
+  if(r.status!=="paid"){ r.status="paid"; r.paidAt=t.date; r.paidByLink=true; }
+  if(state.scope && state.scope[t.id]) delete state.scope[t.id];
+  if(!isBiz(state.overrides[t.id])) state.overrides[t.id]=catByRole("bizIncome");
+  refreshLinked();
+}
+function unlinkReceipt(r){
+  const id=r.txId; r.txId=""; r.at=Date.now();
+  if(r.paidByLink){ r.status="pending"; r.paidAt=""; r.paidByLink=false; }
+  if(state.overrides[id]===catByRole("bizIncome")) delete state.overrides[id];
+  refreshLinked();
+}
+// Movimentos apagados (ou partes que deixam de existir): o recibo perde o pagamento e volta a "por receber".
+let linkLost=0;
+function dropLinks(pred){
+  for(const r of ((state.biz||{}).receipts||[])) if(r.txId && pred(r.txId)){ unlinkReceipt(r); linkLost++; }
+}
+function linkNote(){
+  const n=linkLost; linkLost=0;
+  return n ? ` ${n===1?"1 recibo verde perdeu":n+" recibos verdes perderam"} o pagamento ligado e ${n===1?"voltou":"voltaram"} a “por receber”.` : "";
+}
+function renderMatches(){
+  const ms=rcMatches(), cn=r=>(clientById(r.clientId)||{name:"?"}).name;
+  $("rcBadge").textContent=ms.length; $("rcBadge").hidden=!ms.length;
+  $("rcMatchPanel").hidden=!ms.length;
+  $("rcMatchCount").textContent=`${ms.length} recibo${ms.length===1?"":"s"}`;
+  $("rcMatches").innerHTML=ms.map(({r,cands})=>`<div class="match" data-r="${r.id}">
+    <div><b>${esc(r.number)}</b> · ${esc(cn(r))}<small>${r.type==="F"?"fatura":"emitido"} a ${dmy(r.date)} · a receber ${fmt(rcNet(r))}</small></div>
+    <span class="arrow" aria-hidden="true">→</span>
+    <div>${cands.length>1 ? `<select aria-label="Movimento do extrato">${cands.map(c=>`<option value="${esc(c.t.id)}">${esc(txLabel(c.t))}</option>`).join("")}</select>` : `<span>${esc(txLabel(cands[0].t))}</span>`}
+      <small>${cands[0].score ? `<span class="ok">✓</span> o nome do cliente está na descrição` : "a descrição não tem o nome do cliente: confirma"}${cands.length>1?` · ${cands.length} movimentos possíveis`:""}</small></div>
+    <div class="acts"><button type="button" class="primary" data-ok>Confirmar</button><button type="button" data-no>Não é este</button></div></div>`).join("");
+}
+$("rcMatches").onclick=async e=>{
+  const b=e.target.closest("button"); if(!b) return;
+  const row=b.closest(".match"), r=biz().receipts.find(x=>x.id===row.dataset.r), sel=row.querySelector("select");
+  const tid=sel ? sel.value : rcCandidates(r, viewTx())[0].t.id, t=viewTx().find(x=>x.id===tid); if(!r || !t) return;
+  if(b.hasAttribute("data-no")){ (r.rejected ||= []).push(t.id); r.at=Date.now(); await save(); render(); return; }
+  linkReceipt(r,t); await save(); render();
+  toast(`Recibo ${r.number} recebido a ${dmy(t.date)}; o movimento passou para o negócio.`,"Anular",async()=>{ unlinkReceipt(r); await save(); render(); });
+};
+// No formulário do recibo: o movimento ligado (com "Desligar") ou a escolha de um, com os de valor igual primeiro.
+let rcPick="";
+function renderRcPay(){
+  const r=editingRc, txs=viewTx(), t=r && r.txId && txs.find(x=>x.id===r.txId);
+  if(t){ $("rcPay").innerHTML=`<div class="paybox"><span>${esc(txLabel(t))}</span><button type="button" id="rcUnlink">Desligar</button></div>`;
+    $("rcUnlink").onclick=async()=>{ unlinkReceipt(r); await save(); render(); $("rcStatus").value=r.status; $("rcPaid").value=r.paidAt||""; renderRcPay(); rcUpdate(); toast(`Recibo ${r.number} desligado do movimento.`); };
+    return; }
+  const net=rcNet({total:rcVals().total, ret:rcVals().ret}), date=$("rcDate").value||today();
+  const list=txs.filter(x=>x.source==="ca" && x.amount>0 && !LINKED.has(x.id))
+    .sort((a,b)=>(Math.abs(a.amount-net)<0.005?0:1)-(Math.abs(b.amount-net)<0.005?0:1) || Math.abs(dayGap(date,a.date))-Math.abs(dayGap(date,b.date))).slice(0,60);
+  $("rcPay").innerHTML= list.length ? `<select id="rcTx"><option value="">Ainda não ligado a nenhum movimento</option>${list.map(x=>`<option value="${esc(x.id)}">${esc(txLabel(x))}${Math.abs(x.amount-net)<0.005?" ✓":""}</option>`).join("")}</select>`
+    : `<span class="hint">Sem entradas na conta por ligar. Quando importares o extrato com o pagamento, a app sugere a ligação.</span>`;
+  if($("rcTx")){ $("rcTx").value=rcPick; $("rcTx").onchange=()=>{ rcPick=$("rcTx").value; }; }
+}
 
 /* ---------- eventos ---------- */
 $("period").onchange=e=>{ period=e.target.value; showN=60; render(); };
@@ -1963,7 +2074,10 @@ $("fScope").onchange=()=>{ showN=60; render(); };
 $("more").onclick=()=>{ showN+=100; render(); };
 let splitOf=null;
 function openSplit(id){
-  const t=state.tx.find(x=>x.id===id); if(!t) return; splitOf=t;
+  const t=state.tx.find(x=>x.id===id); if(!t) return;
+  const r=biz().receipts.find(r=>r.txId===id);
+  if(r){ toast(`Este movimento é o pagamento do recibo ${r.number}. Para o dividir, desliga-o primeiro no recibo.`); return; }
+  splitOf=t;
   const existing=(state.splits||{})[id], sign=t.amount<0?-1:1;
   $("spInfo").textContent=`${t.date.split("-").reverse().join("/")} · ${t.desc} · ${fmt(t.amount)}`;
   $("spUndo").hidden=!existing; $("spErr").textContent=""; $("spParts").innerHTML="";
@@ -1997,7 +2111,7 @@ function updateLeft(){
 $("spAdd").onclick=()=>{ addPart(splitOf.desc,"",""); updateLeft(); };
 $("spCancel").onclick=()=>$("splitDlg").close();
 $("spUndo").onclick=async()=>{
-  clearSplit(splitOf.id); await save(); $("splitDlg").close(); render(); toast("Divisão desfeita.");
+  clearSplit(splitOf.id); await save(); $("splitDlg").close(); render(); toast("Divisão desfeita."+linkNote());
 };
 $("splitForm").onsubmit=async e=>{
   e.preventDefault();
@@ -2013,9 +2127,10 @@ $("splitForm").onsubmit=async e=>{
   // categorias das partes vêm do formulário; comentários ficam nas partes que continuam a existir
   for(const k in state.overrides) if(k.startsWith(t.id+"~")) delete state.overrides[k];
   for(const m of [state.notes||{}, state.scope||{}]) for(const k in m) if(k.startsWith(t.id+"~") && +k.split("~").pop()>=parts.length) delete m[k];
+  dropLinks(x=>x.startsWith(t.id+"~") && +x.split("~").pop()>=parts.length);
   (state.splits ||= {})[t.id]=parts.map((p,i)=>({desc:p.desc&&p.desc!==t.desc?p.desc:"", amount:round2(sign*vals[i])}));
   parts.forEach((p,i)=>{ if(p.cat) state.overrides[t.id+"~"+i]=p.cat; });
-  await save(); $("splitDlg").close(); render(); toast(`Movimento dividido em ${parts.length} partes.`);
+  await save(); $("splitDlg").close(); render(); toast(`Movimento dividido em ${parts.length} partes.`+linkNote());
 };
 /* Movimentos à mão: entram como os importados (contam nos totais, nas regras e nas cópias). Uma categoria
    escolhida aqui fica como escolha manual; "Automática" deixa as regras decidir. */
@@ -2050,7 +2165,7 @@ $("delShown").onclick=async()=>{
     text:(all?`Saem os ${n} movimentos importados. `:`Saem os ${n} movimentos que a tabela está a mostrar com os filtros atuais (mês, categoria, origem e texto). `)+"A conta, a password e as regras ficam. Não dá para desfazer, mas podes importar os ficheiros outra vez.", ok:"Apagar", danger:true});
   if(!ok) return;
   const k=removeTx(t=>ids.has(t.id)); if(!state.tx.length) state.imports=[];
-  await save(); period=latestMonth(); render(); toast(`${k} movimentos apagados.`);
+  await save(); period=latestMonth(); render(); toast(`${k} movimentos apagados.`+linkNote());
 };
 function cfPromptText(k){
   const [y,m]=k.split("-").map(Number), last=new Date(y,m,0).getDate(), mes=MESL[m-1];
