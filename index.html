@@ -45,7 +45,7 @@ h2{font-size:1.15rem;font-weight:700}
 .label{font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600}
 header.top{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap}
 select,input,button,textarea{font:inherit;color:var(--fg)}
-select,input[type=search],input[type=text],input[type=password],input[type=date]{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:16px}
+select,input[type=search],input[type=text],input[type=password],input[type=date],input[type=email],input[type=tel],input[type=url],.field textarea{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:16px}
 button{cursor:pointer;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:7px 12px}
 button:hover{border-color:var(--muted)}
 button.primary{background:var(--accent);color:var(--bg);border-color:var(--accent);font-weight:600}
@@ -61,7 +61,7 @@ button:disabled{opacity:.55;cursor:default}
 .gate p{margin:0;color:var(--muted);font-size:.9rem}
 .field{display:flex;flex-direction:column;gap:5px}
 .field span{font-size:.82rem;font-weight:600}
-.field input,.field select{width:100%}
+.field input,.field select,.field textarea{width:100%} .field textarea{resize:vertical}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 .addgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px} .addgrid .wide{grid-column:1/-1}
 .rowdel{padding:3px 6px;font-size:.8rem;line-height:1;color:var(--muted);background:transparent;border-color:transparent;vertical-align:middle} .rowdel:hover{color:var(--fg);border-color:var(--line)} .rowdel[data-d]:hover{color:var(--neg)}
@@ -119,6 +119,39 @@ a.kpi{color:inherit;text-decoration:none} a.kpi:hover .label{color:var(--biz)}
 .scp{font-size:.7rem;font-weight:600;padding:2px 8px;margin-right:6px;border-radius:99px;border:1px solid transparent;background:var(--chip);color:var(--muted);vertical-align:middle}
 .scp:hover{border-color:var(--line)}
 .scp.biz{background:color-mix(in srgb,var(--biz) 16%,transparent);color:var(--biz)}
+.subview{display:contents}
+.seg>button{border:0;background:none;padding:5px 14px;border-radius:8px;color:var(--muted);font-weight:600;font-size:.85rem}
+.seg>button[aria-pressed=true]{background:var(--surface);color:var(--fg);box-shadow:0 1px 2px rgb(0 0 0 / .1)}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);overflow-x:auto}
+.tabs a{padding:8px 12px;color:var(--muted);text-decoration:none;font-weight:600;border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap}
+.tabs a[aria-current=page]{color:var(--fg);border-bottom-color:var(--biz)}
+dialog.wide{width:min(560px,calc(100% - 32px))}
+.muted{color:var(--muted)}
+.lnk{background:none;border:0;padding:0;color:var(--fg);font-weight:600;text-align:left;cursor:pointer} .lnk:hover{text-decoration:underline;text-underline-offset:3px}
+.st{display:inline-block;font-size:.7rem;font-weight:600;padding:1px 8px;border-radius:99px;background:color-mix(in srgb,var(--c) 16%,transparent);color:var(--c);white-space:nowrap}
+.tag{font-size:.7rem;font-weight:600;padding:1px 8px;border-radius:99px;background:var(--chip);color:var(--muted);white-space:nowrap}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
+.card{border:1px solid var(--line);border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.card-h{display:flex;justify-content:space-between;align-items:baseline;gap:8px} .card-h b{overflow-wrap:anywhere}
+.card small{color:var(--muted);overflow-wrap:anywhere}
+.cnote{margin:0;font-size:.82rem;color:var(--muted);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.mini{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:5px;font-size:.85rem}
+.mini li{display:flex;flex-wrap:wrap;gap:2px 8px;align-items:center} .mini .lnk{font-weight:500;overflow-wrap:break-word;min-width:0}
+.mini .r{margin-left:auto;display:flex;gap:8px;align-items:center}
+.card-f{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-top:auto;padding-top:8px;border-top:1px solid var(--line);font-size:.82rem}
+.card-f button{padding:4px 10px;font-size:.82rem}
+.board{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(210px,1fr);gap:10px;overflow-x:auto;padding-bottom:6px}
+.bcol{background:var(--bg);border:1px solid transparent;border-radius:10px;padding:8px;display:flex;flex-direction:column;gap:8px;min-height:140px}
+.bcol.over{border-color:var(--biz)}
+.bcol-h{display:flex;justify-content:space-between;align-items:center;gap:6px;font-size:.78rem;padding:2px 2px 0}
+.bsum{font-size:.75rem;color:var(--muted);padding:0 2px 2px;margin-top:-4px}
+.pcard{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px 10px;display:flex;flex-direction:column;gap:3px;font-size:.85rem}
+.pcard[draggable=true]{cursor:grab} .pcard.drag{opacity:.4}
+.pcard small{color:var(--muted)} .pcard select{margin-top:4px;padding:3px 6px;font-size:.8rem}
+.plist{display:flex;flex-direction:column}
+.prow{display:grid;grid-template-columns:minmax(0,1fr) 170px 110px 90px;gap:10px;align-items:center;padding:9px 0;border-top:1px solid var(--line);font-size:.88rem}
+.prow:first-child{border-top:0} .prow small{display:block;color:var(--muted)} .prow select{padding:3px 6px;font-size:.82rem} .prow .num{text-align:right}
+@media (max-width:600px){ .prow{grid-template-columns:minmax(0,1fr) auto} .prow select{grid-column:1} .prow .pd{grid-column:2;grid-row:1} }
 
 .grid2{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:22px}
 @media (max-width:820px){.grid2{grid-template-columns:minmax(0,1fr)}}
@@ -316,6 +349,8 @@ dialog p{margin:0;color:var(--muted);font-size:.9rem}
   </div>
 
   <div class="view" data-view="negocio" hidden>
+  <nav class="tabs" id="bizNav" aria-label="Negócio"><a href="#negocio" data-s="painel">Painel</a><a href="#negocio/clientes" data-s="clientes">Clientes</a><a href="#negocio/projetos" data-s="projetos">Projetos</a></nav>
+  <div class="subview" data-sub="painel">
   <section class="kpis" id="bizKpis"></section>
   <section class="panel">
     <div class="panel-h"><h2>Despesas do negócio por categoria</h2><span class="label" id="bizCatPeriod"></span></div>
@@ -340,6 +375,33 @@ dialog p{margin:0;color:var(--muted);font-size:.9rem}
       </div>
     </details>
   </section>
+  </div>
+
+  <div class="subview" data-sub="clientes" hidden>
+  <section class="panel">
+    <div class="panel-h"><h2>Clientes</h2><span class="label num" id="clCount"></span></div>
+    <div class="filters">
+      <input type="search" id="clQ" placeholder="Procurar nome, NIF ou email…" aria-label="Procurar clientes">
+      <button class="primary" type="button" id="newClient">Novo cliente</button>
+    </div>
+    <div class="cards" id="clList"></div>
+  </section>
+  </div>
+
+  <div class="subview" data-sub="projetos" hidden>
+  <section class="kpis" id="pjKpis"></section>
+  <section class="panel">
+    <div class="panel-h"><h2>Projetos</h2><div class="seg" id="pjMode" role="group" aria-label="Vista dos projetos"><button type="button" data-m="board">Quadro</button><button type="button" data-m="list">Lista</button></div></div>
+    <div class="filters">
+      <input type="search" id="pjQ" placeholder="Procurar projeto, cliente ou site…" aria-label="Procurar projetos">
+      <select id="pjSt" aria-label="Estado"></select>
+      <select id="pjCl" aria-label="Cliente"></select>
+      <button class="primary" type="button" id="newProject">Novo projeto</button>
+    </div>
+    <div class="board" id="pjBoard"></div>
+    <div class="plist" id="pjList"></div>
+  </section>
+  </div>
   </div>
 
   <section class="panel">
@@ -426,6 +488,37 @@ dialog p{margin:0;color:var(--muted);font-size:.9rem}
   <p class="help" style="margin:0">Uma parte com o valor em branco fica com o que falta distribuir.</p>
   <div class="err" id="spErr"></div>
   <div class="filters" style="justify-content:space-between"><button type="button" class="danger" id="spUndo">Desfazer divisão</button><span style="display:flex;gap:8px;margin-left:auto"><button type="button" id="spCancel">Cancelar</button><button class="primary" type="submit">Guardar</button></span></div>
+</form></dialog>
+<dialog id="clDlg" class="wide"><form method="dialog" id="clForm" novalidate>
+  <h2 id="clTitle">Novo cliente</h2>
+  <div class="addgrid">
+    <label class="field wide"><span>Nome</span><input type="text" id="clName" maxlength="120" autocomplete="off"></label>
+    <label class="field"><span>Tipo</span><select id="clKind"><option value="particular">Particular</option><option value="empresa">Empresa</option></select></label>
+    <label class="field"><span>NIF</span><input type="text" id="clNif" inputmode="numeric" maxlength="14" autocomplete="off" placeholder="9 dígitos"></label>
+    <p class="hint wide" id="clKindHint" style="margin:0"></p>
+    <label class="field"><span>Email</span><input type="email" id="clEmail" maxlength="120" autocomplete="off"></label>
+    <label class="field"><span>Telefone</span><input type="tel" id="clPhone" maxlength="30" autocomplete="off"></label>
+    <label class="field wide"><span>Nome no extrato (opcional)</span><input type="text" id="clAlias" maxlength="200" autocomplete="off" placeholder="Ex.: J M SILVA, SILVA LDA"></label>
+    <p class="hint wide" style="margin:0">Como o nome aparece nas transferências do banco, separado por vírgulas. Ajuda a reconhecer os pagamentos deste cliente no extrato.</p>
+    <label class="field wide"><span>Notas</span><textarea id="clNotes" rows="3" maxlength="1000"></textarea></label>
+  </div>
+  <div class="err" id="clErr"></div>
+  <div class="filters" style="justify-content:space-between"><button type="button" class="danger" id="clDel">Apagar</button><span style="display:flex;gap:8px;margin-left:auto"><button type="button" id="clCancel">Cancelar</button><button class="primary" type="submit">Guardar</button></span></div>
+</form></dialog>
+<dialog id="pjDlg" class="wide"><form method="dialog" id="pjForm" novalidate>
+  <h2 id="pjTitle">Novo projeto</h2>
+  <div class="addgrid">
+    <label class="field wide"><span>Nome do projeto</span><input type="text" id="pjName" maxlength="120" autocomplete="off" placeholder="Ex.: Site da Padaria Silva"></label>
+    <label class="field wide"><span>Cliente</span><select id="pjCli"></select></label>
+    <label class="field"><span>Estado</span><select id="pjStatus"></select></label>
+    <label class="field"><span>Valor acordado (€)</span><input type="text" id="pjValue" inputmode="decimal" autocomplete="off" placeholder="1500,00"></label>
+    <label class="field wide"><span>Endereço do site (opcional)</span><input type="url" id="pjUrl" maxlength="200" autocomplete="off" placeholder="exemplo.pt"></label>
+    <label class="field"><span>Entrega prevista</span><input type="date" id="pjDue"></label>
+  </div>
+  <div><span class="label">Datas de cada estado</span><div class="addgrid" id="pjDates" style="margin-top:6px"></div></div>
+  <label class="field"><span>Notas</span><textarea id="pjNotes" rows="3" maxlength="2000"></textarea></label>
+  <div class="err" id="pjErr"></div>
+  <div class="filters" style="justify-content:space-between"><button type="button" class="danger" id="pjDel">Apagar</button><span style="display:flex;gap:8px;margin-left:auto"><button type="button" id="pjCancel">Cancelar</button><button class="primary" type="submit">Guardar</button></span></div>
 </form></dialog>
 <div class="toast" id="toast" hidden></div>
 
@@ -560,7 +653,7 @@ $("forgot").onclick = async ()=>{
 function lock(msg){
   if(!session) return;
   session=null; state=null;
-  $("rows").innerHTML=""; $("kpis").innerHTML=""; $("cats").innerHTML=""; $("chart").innerHTML=""; $("bizKpis").innerHTML=""; $("bizCats").innerHTML="";
+  $("rows").innerHTML=""; $("kpis").innerHTML=""; $("cats").innerHTML=""; $("chart").innerHTML=""; $("bizKpis").innerHTML=""; $("bizCats").innerHTML=""; $("clList").innerHTML=""; $("pjBoard").innerHTML=""; $("pjList").innerHTML=""; $("pjKpis").innerHTML="";
   mode="login"; setupGate();
   if(msg) $("authErr").textContent = msg;
 }
@@ -658,6 +751,7 @@ function upgradeBiz(){
     changed=true;
   }
   if(!state.bizStart){ state.bizStart=today(); changed=true; }
+  if(!state.biz){ state.biz={clients:[], projects:[], gone:{}}; changed=true; }
   return changed;
 }
 /* Palavras-chave acrescentadas depois da primeira versão. Contas antigas recebem-nas uma vez,
@@ -1041,6 +1135,7 @@ $("restoreFile").onchange=async e=>{
   if(data.notes) state.notes=Object.assign({}, data.notes, state.notes||{});
   if(data.scope) state.scope=Object.assign({}, data.scope, state.scope||{});
   if(data.bizStart && (data.bizStartAt||0)>(state.bizStartAt||0)){ state.bizStart=data.bizStart; state.bizStartAt=data.bizStartAt; }
+  mergeBiz(data.biz);
   if(data.mine) state.mine=[...new Set([...(state.mine||[]), ...data.mine])];
   await save(); period=latestMonth(); renderRules(); render();
   toast(`Cópia restaurada: ${added} movimentos novos`+(dup?`, ${dup} já existiam`:"")+".");
@@ -1066,7 +1161,7 @@ $("wipeBtn").onclick=async()=>{
 };
 
 /* ---------- vista ---------- */
-let period="all", catFilter="", showN=60, shownRows=[], view="pessoal";
+let period="all", catFilter="", showN=60, shownRows=[], view="pessoal", sub="painel";
 function latestMonth(){ const ms=[...new Set(state.tx.map(t=>ym(t.date)))].sort(); return ms[ms.length-1]||"all"; }
 function startApp(){
   $("gate").hidden=true; $("app").hidden=false;
@@ -1075,12 +1170,18 @@ function startApp(){
   period=latestMonth(); $("q").value=""; $("fSrc").value="";
   setView(location.hash.slice(1)); renderRules(); render(); bump(); scrollTo(0,0);
 }
-/* Duas vistas, Pessoal e Negócio, escolhidas pelo endereço (#pessoal, #negocio) para o "voltar" funcionar.
-   A tabela de movimentos é a mesma: muda de sítio e de filtro de âmbito. */
-function setView(v){
+/* Duas vistas, Pessoal e Negócio, escolhidas pelo endereço (#pessoal, #negocio, #negocio/clientes…) para
+   o "voltar" funcionar. A tabela de movimentos é a mesma: muda de sítio e de filtro de âmbito. */
+const BIZ_SUBS=["painel","clientes","projetos"];
+function setView(h){
+  const [v,s]=String(h||"").split("/");
   view= v==="negocio" ? "negocio" : "pessoal";
+  sub= view==="negocio" && BIZ_SUBS.includes(s) ? s : "painel";
+  const cur=(a,on)=>{ if(on) a.setAttribute("aria-current","page"); else a.removeAttribute("aria-current"); };
   document.querySelectorAll(".view").forEach(e=>e.hidden=e.dataset.view!==view);
-  document.querySelectorAll(".seg a").forEach(a=>{ if(a.dataset.v===view) a.setAttribute("aria-current","page"); else a.removeAttribute("aria-current"); });
+  document.querySelectorAll(".subview").forEach(e=>e.hidden=e.dataset.sub!==sub);
+  document.querySelectorAll(".seg a").forEach(a=>cur(a, a.dataset.v===view));
+  document.querySelectorAll("#bizNav a").forEach(a=>cur(a, a.dataset.s===sub));
   $(view==="negocio"?"bizTxSlot":"txSlot").appendChild($("txPanel"));
   $("fScope").value= view==="negocio" ? "biz" : "personal";
   catFilter=""; showN=60;
@@ -1127,7 +1228,7 @@ function render(){
     ["Início de atividade", state.bizStart.split("-").reverse().join("/"), "antes desta data, tudo é pessoal"]
   ].map(kpiHtml).join("");
   renderChart(pt,months); renderCats(pcur,pt,months,"cats","catPeriod"); renderCats(bcur,bt,months,"bizCats","bizCatPeriod");
-  renderDonut(pcur); renderTop5(pcur); renderTable(cur);
+  renderDonut(pcur); renderTop5(pcur); renderTable(cur); renderClients(); renderProjects();
 }
 function niceStep(max){ const raw=max/3, p=Math.pow(10,Math.floor(Math.log10(raw||1))), n=raw/p; return (n<=1?1:n<=2?2:n<=2.5?2.5:n<=5?5:10)*p; }
 function renderChart(tx,months){
@@ -1361,6 +1462,217 @@ function toast(msg,actionLabel,action){
   $("tX").onclick=()=>el.hidden=true;
   toastTimer=setTimeout(()=>el.hidden=true, actionLabel?9000:5000);
 }
+
+/* =====================================================================
+   NEGÓCIO: clientes e projetos, em state.biz. Cada registo tem id e "at"
+   (última alteração): ao restaurar uma cópia fica a versão mais recente de
+   cada um. O que se apaga fica em biz.gone, para uma cópia antiga não o
+   trazer de volta.
+   ===================================================================== */
+const uid = () => Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+const dmy = d => d ? d.split("-").reverse().join("/") : "";
+const PJ_ST = [
+  ["contacto","Contacto","var(--muted)"], ["proposta","Proposta enviada","var(--accent-2)"], ["aceite","Aceite","var(--biz)"],
+  ["desenvolvimento","Em desenvolvimento","var(--accent)"], ["entregue","Entregue","var(--pos)"], ["manutencao","Manutenção","#5b9aa8"],
+  ["cancelado","Cancelado","var(--neg)"]
+];
+const stOf = s => PJ_ST.find(x=>x[0]===s) || PJ_ST[0];
+const stLabel = s => stOf(s)[1];
+const stChip = s => `<span class="st" style="--c:${stOf(s)[2]}">${stOf(s)[1]}</span>`;
+const stOptions = () => PJ_ST.map(([k,l])=>`<option value="${k}">${l}</option>`).join("");
+const biz = () => state.biz;
+const clientById = id => biz().clients.find(c=>c.id===id);
+const projectById = id => biz().projects.find(p=>p.id===id);
+const sortedClients = () => biz().clients.slice().sort((a,b)=>a.name.localeCompare(b.name,"pt"));
+const lastDate = p => Object.values(p.dates||{}).sort().pop() || "";
+const byRecent = (a,b) => lastDate(b).localeCompare(lastDate(a)) || a.name.localeCompare(b.name,"pt");
+const siteHost = u => { try{ return new URL(u).host.replace(/^www\./,""); }catch(_){ return ""; } };
+function forget(list, id){ biz()[list]=biz()[list].filter(r=>r.id!==id); biz().gone[id]=Date.now(); }
+function mergeBiz(theirs){
+  if(!theirs) return;
+  const b=biz(), gone=b.gone;
+  for(const [id,at] of Object.entries(theirs.gone||{})) gone[id]=Math.max(gone[id]||0, at);
+  for(const list of ["clients","projects"]){
+    const m=new Map(b[list].map(r=>[r.id,r]));
+    for(const r of theirs[list]||[]){ const a=m.get(r.id); if(!a || (r.at||0)>(a.at||0)) m.set(r.id,r); }
+    b[list]=[...m.values()].filter(r=>!(gone[r.id]>=(r.at||0)));
+  }
+}
+// NIF português: 9 dígitos com dígito de controlo (módulo 11). Um NIF estrangeiro (com letras) não é verificado.
+function nifCheck(v){
+  const n=String(v||"").replace(/\s/g,"").toUpperCase();
+  if(!n) return {n:""};
+  if(/[A-Z]/.test(n)) return {n};
+  if(!/^\d{9}$/.test(n)) return {err:"O NIF tem 9 dígitos."};
+  let s=0; for(let i=0;i<8;i++) s+=+n[i]*(9-i);
+  const c=11-s%11; if((c>=10?0:c)!==+n[8]) return {err:"Este NIF não é válido (o dígito de controlo não bate certo)."};
+  return {n};
+}
+
+/* ---------- clientes ---------- */
+function renderClients(){
+  const b=biz(), q=norm($("clQ").value);
+  const list=sortedClients().filter(c=>!q||[c.name,c.nif,c.email,c.aliases].some(v=>norm(v).includes(q)));
+  $("clCount").textContent=`${b.clients.length} cliente${b.clients.length===1?"":"s"}`;
+  $("clList").innerHTML= list.length ? list.map(c=>{
+    const ps=b.projects.filter(p=>p.clientId===c.id).sort(byRecent);
+    const agreed=ps.filter(p=>p.status!=="cancelado").reduce((s,p)=>s+(p.value||0),0);
+    const contact=[c.nif&&"NIF "+c.nif, c.email, c.phone].filter(Boolean).map(esc).join(" · ");
+    return `<div class="card">
+      <div class="card-h"><b>${esc(c.name)}</b><span class="tag">${c.kind==="empresa"?"Empresa":"Particular"}</span></div>
+      <small>${contact||"Sem NIF nem contactos"}</small>
+      ${c.notes?`<p class="cnote">${esc(c.notes)}</p>`:""}
+      <ul class="mini">${ps.map(p=>`<li><button type="button" class="lnk" data-p="${p.id}">${esc(p.name)}</button><span class="r">${stChip(p.status)}<span class="num">${p.value?fmt(p.value):""}</span></span></li>`).join("") || `<li class="muted">Sem projetos.</li>`}</ul>
+      <div class="card-f"><span class="num muted">${agreed?`Acordado: ${fmt(agreed)}`:""}</span><span style="display:flex;gap:6px"><button type="button" data-edit="${c.id}">Editar</button><button type="button" data-newp="${c.id}">+ Projeto</button></span></div>
+    </div>`; }).join("")
+    : `<p class="empty" style="grid-column:1/-1">${b.clients.length?"Nenhum cliente corresponde à pesquisa.":"Ainda não tens clientes. Cria o primeiro em Novo cliente."}</p>`;
+}
+$("clList").onclick=e=>{
+  const b=e.target.closest("button"); if(!b) return;
+  if(b.dataset.p) openProject(b.dataset.p);
+  else if(b.dataset.edit) openClient(b.dataset.edit);
+  else if(b.dataset.newp) openProject(null, b.dataset.newp);
+};
+$("clQ").oninput=renderClients;
+
+let editingClient=null, afterClient=null, kindTouched=false;
+const KIND_HINT={particular:"Particular: não retém IRS na fonte quando te paga.", empresa:"Empresa: em regra, retém IRS na fonte quando te paga. O recibo verde mostra o valor retido."};
+function kindHint(){ $("clKindHint").textContent=KIND_HINT[$("clKind").value]; }
+function openClient(id, after=null){
+  const c=id ? clientById(id) : null; editingClient=c; afterClient=after; kindTouched=!!c;
+  $("clTitle").textContent= c ? "Editar cliente" : "Novo cliente";
+  $("clName").value=c?.name||""; $("clKind").value=c?.kind||"particular"; $("clNif").value=c?.nif||"";
+  $("clEmail").value=c?.email||""; $("clPhone").value=c?.phone||""; $("clAlias").value=c?.aliases||""; $("clNotes").value=c?.notes||"";
+  $("clDel").hidden=!c; $("clErr").textContent=""; kindHint();
+  $("clDlg").showModal(); $("clName").focus();
+}
+$("clKind").onchange=()=>{ kindTouched=true; kindHint(); };
+// Num cliente novo, o NIF sugere o tipo: começados por 5, 6 ou 9 são de empresas e entidades.
+$("clNif").onchange=()=>{ const {n}=nifCheck($("clNif").value); if(n && /^\d{9}$/.test(n) && !kindTouched){ $("clKind").value=/^[569]/.test(n)?"empresa":"particular"; kindHint(); } };
+$("newClient").onclick=()=>openClient(null);
+$("clCancel").onclick=()=>$("clDlg").close();
+$("clForm").onsubmit=async e=>{
+  e.preventDefault();
+  const name=$("clName").value.replace(/\s+/g," ").trim(), nif=nifCheck($("clNif").value), email=$("clEmail").value.trim();
+  const err=!name?"Escreve o nome do cliente.":nif.err?nif.err:(email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email))?"O email não parece válido.":"";
+  if(err){ $("clErr").textContent=err; return; }
+  const twin=nif.n && biz().clients.find(c=>c.nif===nif.n && c!==editingClient);
+  if(twin){ $("clErr").textContent=`Já existe um cliente com este NIF: ${twin.name}.`; return; }
+  const c=editingClient || {id:uid()};
+  Object.assign(c, {name, kind:$("clKind").value, nif:nif.n, email, phone:$("clPhone").value.trim(),
+    aliases:splitKw($("clAlias").value).join(", "), notes:$("clNotes").value.trim(), at:Date.now()});
+  if(!editingClient) biz().clients.push(c);
+  await save(); $("clDlg").close(); render(); toast(editingClient?"Cliente guardado.":`Cliente “${name}” criado.`);
+  if(afterClient){ const f=afterClient; afterClient=null; f(c); }
+};
+$("clDel").onclick=async()=>{
+  const c=editingClient, n=biz().projects.filter(p=>p.clientId===c.id).length;
+  if(n){ $("clErr").textContent=`Este cliente tem ${n} projeto${n>1?"s":""}. Apaga-${n>1?"os":"o"} ou passa-${n>1?"os":"o"} para outro cliente primeiro.`; return; }
+  $("clDlg").close();
+  if(!await ask({title:`Apagar “${c.name}”?`, text:"Não dá para desfazer.", ok:"Apagar", danger:true})) return;
+  forget("clients", c.id); await save(); render(); toast("Cliente apagado.");
+};
+
+/* ---------- projetos ---------- */
+let pjMode = matchMedia("(max-width:700px)").matches ? "list" : "board";
+$("pjSt").innerHTML=`<option value="">Todos os estados</option>`+stOptions();
+function renderProjects(){
+  const b=biz(), q=norm($("pjQ").value), st=$("pjSt").value, sel=$("pjCl"), was=sel.value;
+  sel.innerHTML=`<option value="">Todos os clientes</option>`+sortedClients().map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join("");
+  sel.value= clientById(was) ? was : "";
+  const cl=sel.value, cname=p=>(clientById(p.clientId)||{name:"(sem cliente)"}).name;
+  const list=b.projects.filter(p=>(!cl||p.clientId===cl) && (!q||[p.name,cname(p),p.url].some(v=>norm(v).includes(q))));
+  const sum=ks=>{ const l=list.filter(p=>ks.includes(p.status)); return [l.length, l.reduce((s,p)=>s+(p.value||0),0)]; };
+  const np=n=>`${n} projeto${n===1?"":"s"}`;
+  const [n1,v1]=sum(["contacto","proposta"]), [n2,v2]=sum(["aceite","desenvolvimento"]), [n3,v3]=sum(["entregue","manutencao"]);
+  $("pjKpis").innerHTML=[
+    ["Em negociação", fmt(v1), `${np(n1)} · contacto e proposta enviada`],
+    ["Em curso", fmt(v2), `${np(n2)} · aceite e em desenvolvimento`],
+    ["Entregues", fmt(v3), `${np(n3)} · entregue e manutenção`]
+  ].map(kpiHtml).join("");
+  $("pjMode").querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed", x.dataset.m===pjMode));
+  $("pjBoard").hidden=pjMode!=="board"; $("pjList").hidden=pjMode!=="list";
+  const shown=list.filter(p=>!st||p.status===st).sort(byRecent);
+  const stSel=p=>`<select data-st="${p.id}" aria-label="Estado de ${esc(p.name)}">${stOptions()}</select>`;
+  if(pjMode==="board"){
+    $("pjBoard").innerHTML=PJ_ST.filter(([k])=>!st||k===st).map(([k,l,c])=>{
+      const ps=shown.filter(p=>p.status===k), tot=ps.reduce((s,p)=>s+(p.value||0),0);
+      return `<div class="bcol" data-col="${k}"><div class="bcol-h"><span class="st" style="--c:${c}">${l}</span><span class="num muted">${ps.length}</span></div>${tot?`<small class="bsum num">${fmt(tot)}</small>`:""}
+        ${ps.map(p=>`<div class="pcard" draggable="true" data-id="${p.id}"><button type="button" class="lnk" data-open="${p.id}">${esc(p.name)}</button>
+          <small>${esc(cname(p))}${p.value?` · <span class="num">${fmt(p.value)}</span>`:""}</small>
+          ${p.due && ["aceite","desenvolvimento"].includes(p.status)?`<small>Entrega prevista: ${dmy(p.due)}</small>`:""}${stSel(p)}</div>`).join("") || `<p class="hint" style="margin:0;padding:2px">Sem projetos.</p>`}</div>`;
+    }).join("");
+  } else {
+    $("pjList").innerHTML= shown.length ? shown.map(p=>`<div class="prow"><div><button type="button" class="lnk" data-open="${p.id}">${esc(p.name)}</button><small>${esc(cname(p))}${siteHost(p.url)?" · "+esc(siteHost(p.url)):""}</small></div>
+      ${stSel(p)}<span class="num">${p.value?fmt(p.value):"—"}</span><small class="pd num" title="Data do estado mais recente">${dmy(lastDate(p))}</small></div>`).join("")
+      : `<p class="empty">${b.projects.length?"Nenhum projeto corresponde aos filtros.":"Ainda não tens projetos. Cria o primeiro em Novo projeto."}</p>`;
+  }
+  document.querySelectorAll("#pjBoard select[data-st], #pjList select[data-st]").forEach(s=>s.value=projectById(s.dataset.st).status);
+}
+async function setStatus(p, s){
+  if(p.status===s) return;
+  p.status=s; (p.dates ||= {})[s] ||= today(); p.at=Date.now();
+  await save(); render(); toast(`“${p.name}”: ${stLabel(s)}.`);
+}
+for(const el of [$("pjBoard"), $("pjList")]){
+  el.onclick=e=>{ const b=e.target.closest("button[data-open]"); if(b) openProject(b.dataset.open); };
+  el.onchange=e=>{ const s=e.target.closest("select[data-st]"); if(s) setStatus(projectById(s.dataset.st), s.value); };
+}
+// No Mac, os cartões arrastam-se entre colunas; no iPhone muda-se o estado no seletor de cada cartão.
+let dragId=null;
+$("pjBoard").ondragstart=e=>{ const c=e.target.closest(".pcard"); if(!c) return; dragId=c.dataset.id; c.classList.add("drag"); e.dataTransfer.effectAllowed="move"; e.dataTransfer.setData("text/plain", dragId); };
+$("pjBoard").ondragend=e=>{ dragId=null; e.target.closest(".pcard")?.classList.remove("drag"); $("pjBoard").querySelectorAll(".over").forEach(x=>x.classList.remove("over")); };
+$("pjBoard").ondragover=e=>{ const col=e.target.closest(".bcol"); if(!col || !dragId) return; e.preventDefault(); $("pjBoard").querySelectorAll(".over").forEach(x=>x!==col&&x.classList.remove("over")); col.classList.add("over"); };
+$("pjBoard").ondrop=e=>{ const col=e.target.closest(".bcol"); if(!col || !dragId) return; e.preventDefault(); const p=projectById(dragId); dragId=null; if(p) setStatus(p, col.dataset.col); };
+$("pjMode").onclick=e=>{ const b=e.target.closest("button[data-m]"); if(b){ pjMode=b.dataset.m; renderProjects(); } };
+$("pjQ").oninput=renderProjects; $("pjSt").onchange=renderProjects; $("pjCl").onchange=renderProjects;
+
+/* Datas de cada estado: a de um estado novo é a de hoje, e todas se podem corrigir. Se mudares o estado
+   no formulário e voltares atrás, a data acrescentada por engano sai. */
+let editingProj=null, pjDates={}, pjAuto=null;
+function readPjDates(){ $("pjDates").querySelectorAll("input[data-k]").forEach(i=>{ if(i.value) pjDates[i.dataset.k]=i.value; else delete pjDates[i.dataset.k]; }); }
+function renderPjDates(){
+  const st=$("pjStatus").value;
+  if(!pjDates[st]){ pjDates[st]=today(); pjAuto=st; }
+  $("pjDates").innerHTML=PJ_ST.filter(([k])=>pjDates[k]).map(([k,l])=>`<label class="field"><span>${l}</span><input type="date" data-k="${k}" value="${pjDates[k]}"></label>`).join("");
+}
+$("pjStatus").onchange=()=>{
+  readPjDates();
+  if(pjAuto && pjAuto!==$("pjStatus").value && pjDates[pjAuto]===today()) delete pjDates[pjAuto];
+  pjAuto=null; renderPjDates();
+};
+function openProject(id, clientId){
+  if(!biz().clients.length){ toast("Cria primeiro o cliente do projeto."); openClient(null, c=>openProject(null, c.id)); return; }
+  const p=id ? projectById(id) : null; editingProj=p;
+  $("pjTitle").textContent= p ? "Editar projeto" : "Novo projeto";
+  $("pjCli").innerHTML=sortedClients().map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join("");
+  $("pjCli").value= p?.clientId || clientId || $("pjCl").value || sortedClients()[0].id;
+  $("pjName").value=p?.name||""; $("pjStatus").innerHTML=stOptions(); $("pjStatus").value=p?.status||"contacto";
+  $("pjValue").value= p?.value ? String(p.value).replace(".",",") : ""; $("pjUrl").value=p?.url||""; $("pjDue").value=p?.due||""; $("pjNotes").value=p?.notes||"";
+  pjDates={...(p?.dates||{})}; renderPjDates(); pjAuto=null; // a data do estado com que o formulário abre fica
+  $("pjDel").hidden=!p; $("pjErr").textContent="";
+  $("pjDlg").showModal(); if(!p) $("pjName").focus();
+}
+$("newProject").onclick=()=>openProject(null);
+$("pjCancel").onclick=()=>$("pjDlg").close();
+$("pjForm").onsubmit=async e=>{
+  e.preventDefault();
+  const name=$("pjName").value.replace(/\s+/g," ").trim(), raw=$("pjValue").value.trim(), value=raw? round2(parseNumber(raw)) : 0;
+  let url=$("pjUrl").value.trim(); if(url && !/^https?:\/\//i.test(url)) url="https://"+url;
+  const err=!name?"Escreve o nome do projeto.":!clientById($("pjCli").value)?"Escolhe o cliente.":!(value>=0)?"O valor acordado tem de ser um número.":(url && !siteHost(url))?"O endereço do site não parece válido.":"";
+  if(err){ $("pjErr").textContent=err; return; }
+  readPjDates();
+  const status=$("pjStatus").value; pjDates[status] ||= today();
+  const p=editingProj || {id:uid()};
+  Object.assign(p, {name, clientId:$("pjCli").value, status, value, url, due:$("pjDue").value||"", notes:$("pjNotes").value.trim(), dates:{...pjDates}, at:Date.now()});
+  if(!editingProj) biz().projects.push(p);
+  await save(); $("pjDlg").close(); render(); toast(editingProj?"Projeto guardado.":`Projeto “${name}” criado.`);
+};
+$("pjDel").onclick=async()=>{
+  const p=editingProj; $("pjDlg").close();
+  if(!await ask({title:`Apagar “${p.name}”?`, text:"Não dá para desfazer.", ok:"Apagar", danger:true})) return;
+  forget("projects", p.id); await save(); render(); toast("Projeto apagado.");
+};
 
 /* ---------- eventos ---------- */
 $("period").onchange=e=>{ period=e.target.value; showN=60; render(); };

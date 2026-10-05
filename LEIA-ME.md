@@ -50,6 +50,9 @@ A conta é a mesma para o pessoal e para o negócio, por isso cada movimento tem
 - **Regras do negócio** (na vista Negócio): palavras-chave que marcam sozinhas um movimento como negócio, por exemplo `hostinger` ou `namecheap`.
 - **Início de atividade** (na vista Negócio): antes desta data tudo é pessoal, mesmo que bata com uma regra do negócio. Ao atualizar a app, fica a data desse dia, e os movimentos que já existiam continuam pessoais.
 - Uma despesa usada nas duas coisas divide-se com a tesoura; cada parte tem o seu âmbito.
+- **Clientes** (Negócio → Clientes): nome, tipo (particular ou empresa), NIF (a app confere o dígito de controlo), contactos, notas e o "nome no extrato" — como o nome aparece nas transferências do banco, para reconhecer os pagamentos. Cada cartão mostra os projetos do cliente e o total acordado.
+- **Projetos** (Negócio → Projetos): estado (contacto → proposta enviada → aceite → em desenvolvimento → entregue → manutenção, ou cancelado), valor acordado, site, entrega prevista e notas. A data de cada estado fica registada e pode ser corrigida. Vista em **Quadro** (no Mac, arrasta os cartões entre colunas) ou em **Lista**, com filtros por estado e cliente.
+- Clientes e projetos entram na cópia de segurança. Ao restaurar, fica a versão mais recente de cada um, e o que apagaste não volta.
 
 ## 6. Passar dados entre o Mac e o iPhone
 

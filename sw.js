@@ -1,5 +1,5 @@
 // Guarda a app para funcionar sem internet. Não guarda dados pessoais: esses ficam cifrados no localStorage.
-const VERSION = "contas-v20";
+const VERSION = "contas-v21";
 const SHELL = [
   "./",
   "index.html",
