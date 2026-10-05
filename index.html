@@ -388,7 +388,7 @@ dialog p{margin:0;color:var(--muted);font-size:.9rem}
   </div>
 
   <div class="view" data-view="negocio" hidden>
-  <nav class="tabs" id="bizNav" aria-label="Negócio"><a href="#negocio" data-s="painel">Painel</a><a href="#negocio/clientes" data-s="clientes">Clientes</a><a href="#negocio/projetos" data-s="projetos">Projetos</a><a href="#negocio/recibos" data-s="recibos">Recibos<span class="badge" id="rcBadge" hidden></span></a><a href="#negocio/definicoes" data-s="definicoes">Definições</a></nav>
+  <nav class="tabs" id="bizNav" aria-label="Negócio"><a href="#negocio" data-s="painel">Painel</a><a href="#negocio/clientes" data-s="clientes">Clientes</a><a href="#negocio/projetos" data-s="projetos">Projetos</a><a href="#negocio/servicos" data-s="servicos">Serviços</a><a href="#negocio/recibos" data-s="recibos">Recibos<span class="badge" id="rcBadge" hidden></span></a><a href="#negocio/definicoes" data-s="definicoes">Definições</a></nav>
   <div class="subview" data-sub="painel">
   <section class="kpis" id="bizKpis"></section>
   <section class="panel" id="todoPanel">
@@ -426,6 +426,25 @@ dialog p{margin:0;color:var(--muted);font-size:.9rem}
     </div>
     <div class="board" id="pjBoard"></div>
     <div class="plist" id="pjList"></div>
+  </section>
+  </div>
+
+  <div class="subview" data-sub="servicos" hidden>
+  <section class="kpis" id="svKpis"></section>
+  <section class="panel" id="svDuePanel" hidden>
+    <div class="panel-h"><h2>Renovações nos próximos 30 dias</h2><span class="label num" id="svDueCount"></span></div>
+    <p class="help" style="margin:0">“Renovado” passa a próxima renovação um período à frente e oferece registar o recibo verde.</p>
+    <div id="svDue"></div>
+  </section>
+  <section class="panel">
+    <div class="panel-h"><h2>Serviços recorrentes</h2><span class="label num" id="svCount"></span></div>
+    <p class="help" style="margin:0">Suporte técnico, manutenção e outros serviços cobrados todos os meses ou todos os anos. Pela tua proposta, o domínio e o alojamento ficam em nome do cliente; se pagares algo por ele (um plugin, uma licença), regista-o em “custo para mim” para ver a margem.</p>
+    <div class="filters">
+      <input type="search" id="svQ" placeholder="Procurar serviço ou cliente…" aria-label="Procurar serviços">
+      <select id="svSt" aria-label="Estado"><option value="">Ativos</option><option value="off">Terminados</option><option value="all">Todos</option></select>
+      <button class="primary" type="button" id="newService">Novo serviço</button>
+    </div>
+    <div class="plist" id="svList"></div>
   </section>
   </div>
 
@@ -634,6 +653,23 @@ dialog p{margin:0;color:var(--muted);font-size:.9rem}
   <div class="err" id="pjErr"></div>
   <div class="filters" style="justify-content:space-between"><button type="button" class="danger" id="pjDel">Apagar</button><span style="display:flex;gap:8px;margin-left:auto"><button type="button" id="pjCancel">Cancelar</button><button class="primary" type="submit">Guardar</button></span></div>
 </form></dialog>
+<dialog id="svDlg" class="wide"><form method="dialog" id="svForm" novalidate>
+  <h2 id="svTitle">Novo serviço recorrente</h2>
+  <div class="addgrid">
+    <label class="field wide"><span>Cliente</span><select id="svCli"></select></label>
+    <label class="field wide"><span>Projeto (opcional)</span><select id="svProj"></select></label>
+    <label class="field"><span>Tipo</span><select id="svKind"></select></label>
+    <label class="field"><span>Periodicidade</span><select id="svPeriod"><option value="mensal">Mensal</option><option value="anual">Anual</option></select></label>
+    <label class="field wide"><span>Descrição (opcional)</span><input type="text" id="svDesc" maxlength="120" autocomplete="off" placeholder="Ex.: suporte e atualizações de segurança"></label>
+    <label class="field"><span>Valor cobrado (€)</span><input type="text" id="svPrice" inputmode="decimal" autocomplete="off"></label>
+    <label class="field"><span>Custo para mim (€)</span><input type="text" id="svCost" inputmode="decimal" autocomplete="off" placeholder="0,00"></label>
+    <label class="field"><span>Próxima renovação</span><input type="date" id="svNext"></label>
+    <label class="field" style="flex-direction:row;align-items:center;gap:8px;align-self:end;padding-bottom:8px"><input type="checkbox" id="svActive" style="width:auto"><span>Ativo</span></label>
+    <label class="field wide"><span>Notas</span><textarea id="svNotes" rows="2" maxlength="1000"></textarea></label>
+  </div>
+  <div class="err" id="svErr"></div>
+  <div class="filters" style="justify-content:space-between"><button type="button" class="danger" id="svDel">Apagar</button><span style="display:flex;gap:8px;margin-left:auto"><button type="button" id="svCancel">Cancelar</button><button class="primary" type="submit">Guardar</button></span></div>
+</form></dialog>
 <dialog id="rcDlg" class="wide"><form method="dialog" id="rcForm" novalidate>
   <h2 id="rcTitle">Recibo verde</h2>
   <p class="hint" id="rcFile" style="margin:0"></p>
@@ -791,7 +827,7 @@ $("forgot").onclick = async ()=>{
 function lock(msg){
   if(!session) return;
   session=null; state=null;
-  $("rows").innerHTML=""; $("kpis").innerHTML=""; $("cats").innerHTML=""; $("chart").innerHTML=""; $("bizKpis").innerHTML=""; $("bizCats").innerHTML=""; $("clList").innerHTML=""; $("pjBoard").innerHTML=""; $("pjList").innerHTML=""; $("pjKpis").innerHTML=""; $("rcList").innerHTML=""; $("rcKpis").innerHTML="";
+  $("rows").innerHTML=""; $("kpis").innerHTML=""; $("cats").innerHTML=""; $("chart").innerHTML=""; $("bizKpis").innerHTML=""; $("bizCats").innerHTML=""; $("clList").innerHTML=""; $("pjBoard").innerHTML=""; $("pjList").innerHTML=""; $("pjKpis").innerHTML=""; $("rcList").innerHTML=""; $("rcKpis").innerHTML=""; $("svList").innerHTML=""; $("svDue").innerHTML=""; $("svKpis").innerHTML="";
   mode="login"; setupGate();
   if(msg) $("authErr").textContent = msg;
 }
@@ -892,6 +928,7 @@ function upgradeBiz(){
   if(!state.biz){ state.biz={clients:[], projects:[], gone:{}}; changed=true; }
   if(!state.biz.receipts){ state.biz.receipts=[]; changed=true; }
   if(!state.biz.cfg){ state.biz.cfg=CFG_DEFAULT(); changed=true; }
+  if(!state.biz.services){ state.biz.services=[]; changed=true; }
   if(state.biz.projects.some(needsNormalize)){ state.biz.projects.forEach(normalizeProject); changed=true; }
   return changed;
 }
@@ -1322,7 +1359,7 @@ function startApp(){
 }
 /* Duas vistas, Pessoal e Negócio, escolhidas pelo endereço (#pessoal, #negocio, #negocio/clientes…) para
    o "voltar" funcionar. A tabela de movimentos é a mesma: muda de sítio e de filtro de âmbito. */
-const BIZ_SUBS=["painel","clientes","projetos","recibos","definicoes","projeto"];
+const BIZ_SUBS=["painel","clientes","projetos","servicos","recibos","definicoes","projeto"];
 let pageId=null; // projeto aberto em #negocio/projeto/<id>
 function setView(h){
   const [v,s,id]=String(h||"").split("/"); pageId=id||null;
@@ -1380,7 +1417,7 @@ function render(){
     ["Início de atividade", state.bizStart.split("-").reverse().join("/"), "antes desta data, tudo é pessoal"]
   ].map(kpiHtml).join("");
   renderChart(pt,months); renderCats(pcur,pt,months,"cats","catPeriod"); renderCats(bcur,bt,months,"bizCats","bizCatPeriod");
-  renderDonut(pcur); renderTop5(pcur); renderTable(cur); renderClients(); renderProjects(); renderReceipts(); renderTodo();
+  renderDonut(pcur); renderTop5(pcur); renderTable(cur); renderClients(); renderProjects(); renderReceipts(); renderServices(); renderTodo();
   if(view==="negocio" && sub==="projeto") renderProjectPage();
 }
 function niceStep(max){ const raw=max/3, p=Math.pow(10,Math.floor(Math.log10(raw||1))), n=raw/p; return (n<=1?1:n<=2?2:n<=2.5?2.5:n<=5?5:10)*p; }
@@ -1687,7 +1724,7 @@ function mergeBiz(theirs){
   const b=biz(), gone=b.gone;
   if(theirs.cfg && (theirs.cfg.at||0)>(b.cfg.at||0)) b.cfg=theirs.cfg;
   for(const [id,at] of Object.entries(theirs.gone||{})) gone[id]=Math.max(gone[id]||0, at);
-  for(const list of ["clients","projects","receipts"]){
+  for(const list of ["clients","projects","receipts","services"]){
     const m=new Map(b[list].map(r=>[r.id,r]));
     for(const r of theirs[list]||[]){ if(list==="projects") normalizeProject(r); const a=m.get(r.id); if(!a || (r.at||0)>(a.at||0)) m.set(r.id,r); }
     b[list]=[...m.values()].filter(r=>!(gone[r.id]>=(r.at||0)));
@@ -1715,6 +1752,7 @@ function renderClients(){
     const ps=b.projects.filter(p=>p.clientId===c.id).sort(byRecent);
     const agreed=ps.filter(p=>WON.includes(p.status)).reduce((s,p)=>s+(p.value||0),0), lead=!isCustomer(c);
     const billed=b.receipts.filter(r=>r.clientId===c.id && r.status!=="void").reduce((s,r)=>s+r.base,0);
+    const rec=b.services.filter(s=>s.clientId===c.id && s.active).reduce((x,s)=>x+svMonthly(s),0);
     const contact=[c.sector, c.contact, c.nif&&"NIF "+c.nif, c.email, c.phone].filter(Boolean).map(esc).join(" · ");
     const note= lead && c.problems ? c.problems : c.notes;
     return `<div class="card">
@@ -1722,7 +1760,7 @@ function renderClients(){
       <small>${contact||"Sem NIF nem contactos"}</small>
       ${note?`<p class="cnote">${esc(note)}</p>`:""}
       <ul class="mini">${ps.map(p=>`<li><button type="button" class="lnk" data-p="${p.id}">${esc(p.name)}</button><span class="r">${stChip(p.status)}<span class="num">${p.value?fmt(p.value):""}</span></span></li>`).join("") || `<li class="muted">Sem projetos.</li>`}</ul>
-      <div class="card-f"><span class="num muted">${[agreed&&`Acordado: ${fmt(agreed)}`, billed&&`Faturado: ${fmt(billed)}`].filter(Boolean).join(" · ")}</span><span style="display:flex;gap:6px"><button type="button" data-edit="${c.id}">Editar</button><button type="button" data-newp="${c.id}">+ Projeto</button></span></div>
+      <div class="card-f"><span class="num muted">${[agreed&&`Acordado: ${fmt(agreed)}`, billed&&`Faturado: ${fmt(billed)}`, rec&&`Recorrente: ${fmt(rec)}/mês`].filter(Boolean).join(" · ")}</span><span style="display:flex;gap:6px"><button type="button" data-edit="${c.id}">Editar</button><button type="button" data-newp="${c.id}">+ Projeto</button></span></div>
     </div>`; }).join("")
     : `<p class="empty" style="grid-column:1/-1">${b.clients.length?"Nenhum cliente corresponde à pesquisa.":"Ainda não tens clientes. Cria o primeiro em Novo cliente."}</p>`;
 }
@@ -1771,6 +1809,8 @@ $("clForm").onsubmit=async e=>{
 };
 $("clDel").onclick=async()=>{
   const c=editingClient, n=biz().projects.filter(p=>p.clientId===c.id).length, nr=biz().receipts.filter(r=>r.clientId===c.id).length;
+  const nsv=biz().services.filter(s=>s.clientId===c.id).length;
+  if(nsv){ $("clErr").textContent=`Este cliente tem ${nsv} serviço${nsv>1?"s":""} recorrente${nsv>1?"s":""}. Apaga-${nsv>1?"os":"o"} primeiro (ou passa-${nsv>1?"os":"o"} para outro cliente).`; return; }
   if(nr){ $("clErr").textContent=`Este cliente tem ${nr} recibo${nr>1?"s":""} verde${nr>1?"s":""}, por isso não pode ser apagado.`; return; }
   if(n){ $("clErr").textContent=`Este cliente tem ${n} projeto${n>1?"s":""}. Apaga-${n>1?"os":"o"} ou passa-${n>1?"os":"o"} para outro cliente primeiro.`; return; }
   $("clDlg").close();
@@ -1810,11 +1850,15 @@ function pjAlerts(p){
 }
 const alertLevel = a => !a.date ? "" : a.date<today() ? "late" : dayGap(today(),a.date)<=3 ? "soon" : "";
 function renderTodo(){
-  const all=biz().projects.flatMap(pjAlerts).filter(a=>!a.info).sort((a,b)=>(a.date||"9999").localeCompare(b.date||"9999"));
+  const cn=id=>(clientById(id)||{}).name||"";
+  const all=[
+    ...biz().projects.flatMap(pjAlerts).filter(a=>!a.info).map(a=>({date:a.date, text:a.text, sub:`${a.p.name} · ${cn(a.p.clientId)}`, href:`#negocio/projeto/${a.p.id}`})),
+    ...svDue().map(s=>({date:s.next, text:`Renovar ${svName(s)}: ${fmt(s.price)}`, sub:`${cn(s.clientId)} · serviço ${svPerLabel(s)}`, href:"#negocio/servicos"}))
+  ].sort((a,b)=>(a.date||"9999").localeCompare(b.date||"9999"));
   $("todoCount").textContent= all.length ? `${all.length} ${all.length===1?"tarefa":"tarefas"}` : "";
   $("todoList").innerHTML= all.length ? all.slice(0,30).map(a=>`<div class="todo ${alertLevel(a)}"><span class="d">${a.date ? (a.date<today()?"atrasado · ":"")+dmy(a.date) : "sem data"}</span>
-      <div>${esc(a.text)}<small>${esc(a.p.name)} · ${esc((clientById(a.p.clientId)||{}).name||"")}</small></div><a class="linkbtn" href="#negocio/projeto/${a.p.id}">Abrir</a></div>`).join("")
-    : `<p class="hint" style="margin:0">Nada pendente. As próximas ações e os lembretes dos projetos (follow-up, validade da proposta, faturação, garantia) aparecem aqui.</p>`;
+      <div>${esc(a.text)}<small>${esc(a.sub)}</small></div><a class="linkbtn" href="${a.href}">Abrir</a></div>`).join("")
+    : `<p class="hint" style="margin:0">Nada pendente. As próximas ações e os lembretes dos projetos (follow-up, validade da proposta, faturação, garantia) e as renovações dos serviços aparecem aqui.</p>`;
 }
 function renderProjects(){
   const b=biz(), q=norm($("pjQ").value), st=$("pjSt").value, sel=$("pjCl"), was=sel.value;
@@ -1948,6 +1992,9 @@ function renderProjectPage(){
     <div>${(p.changes||[]).map(x=>`<div class="chg"><span class="num muted d">${dmy(x.date)}</span><span>${esc(x.desc)}</span><span class="num">${fmt(x.value)}</span><button type="button" class="rowdel" data-delchg="${x.id}" title="Apagar esta alteração" aria-label="Apagar esta alteração">✕</button></div>`).join("") || `<p class="hint" style="margin:0">Sem alterações registadas.</p>`}</div>
     <div class="chgform"><label class="field"><span>Data</span><input type="date" id="chgDate" value="${today()}"></label><label class="field w"><span>Descrição</span><input type="text" id="chgDesc" maxlength="200"></label><label class="field"><span>Valor (€)</span><input type="text" id="chgVal" inputmode="decimal"></label><button type="button" data-act="addchg">Acrescentar</button></div>
   </section>
+  <section class="panel"><div class="panel-h"><h2>Serviços recorrentes</h2><button type="button" data-newsv="${p.id}">Novo serviço</button></div>
+    ${biz().services.filter(s=>s.projectId===p.id).map(s=>`<div class="chg"><span class="num muted d">${s.active?dmy(s.next):"terminado"}</span><span><button type="button" class="lnk" data-sv="${s.id}">${esc(svName(s))}</button> <span class="muted">· ${esc(svKindLabel(s.kind))}</span></span><span class="num">${fmt(s.price)}</span><span class="muted">${svPerLabel(s)}</span></div>`).join("") || `<p class="hint" style="margin:0">Sem serviços. Depois da entrega, regista aqui a manutenção ou o suporte técnico.</p>`}
+  </section>
   <section class="panel"><div class="panel-h"><h2>Mensagens</h2><select id="pjTplSel" aria-label="Modelo de mensagem">${c.templates.map(t=>`<option value="${t.k}">${esc(t.name)}</option>`).join("")}</select></div>
     <pre class="prompt" id="pjTplOut">${tpl?esc(fillTpl(tpl.text,p)):""}</pre>
     <div class="filters"><button type="button" data-act="copytpl">Copiar mensagem</button><span class="hint">O que fica entre [ ] falta preencher no cliente ou no projeto.</span></div>
@@ -2043,7 +2090,7 @@ $("pjForm").onsubmit=async e=>{
 $("pjDel").onclick=async()=>{
   const p=editingProj, nr=biz().receipts.filter(r=>r.projectId===p.id).length; $("pjDlg").close();
   if(!await ask({title:`Apagar “${p.name}”?`, text:(nr?`${nr===1?"O recibo associado fica":`Os ${nr} recibos associados ficam`} só com o cliente. `:"")+"Não dá para desfazer.", ok:"Apagar", danger:true})) return;
-  for(const r of biz().receipts) if(r.projectId===p.id){ r.projectId=""; r.at=Date.now(); }
+  for(const r of [...biz().receipts, ...biz().services]) if(r.projectId===p.id){ r.projectId=""; r.at=Date.now(); }
   forget("projects", p.id); await save();
   if(sub==="projeto") location.hash="#negocio/projetos"; else render();
   toast("Projeto apagado.");
@@ -2081,6 +2128,103 @@ $("condForm").onsubmit=async e=>{
 };
 $("saveTpl").onclick=async()=>{ const c=cfg(); $("tplGrid").querySelectorAll("textarea").forEach(t=>{ const x=c.templates.find(y=>y.k===t.dataset.tpl); if(x) x.text=t.value.trim(); }); c.at=Date.now(); await save(); render(); toast("Modelos guardados."); };
 $("resetTpl").onclick=async()=>{ const c=cfg(); c.templates=TPL_DEFAULT.map(t=>({...t})); c.at=Date.now(); await save(); renderBizSettings(); render(); toast("Modelos repostos."); };
+
+/* ---------- serviços recorrentes ----------
+   Suporte técnico, manutenção e outros serviços cobrados todos os meses ou todos os anos, por cliente (e,
+   opcionalmente, projeto). Receita recorrente mensal = preço mensal + 1/12 do anual. "Renovado" passa a
+   próxima renovação um período à frente e oferece registar o recibo. */
+const SV_KIND=[["suporte","Suporte técnico"],["manutencao","Manutenção"],["alojamento","Alojamento"],["dominio","Domínio"],["email","Email profissional"],["licenca","Licença ou subscrição"],["outro","Outro"]];
+const svKindLabel = k => (SV_KIND.find(x=>x[0]===k)||SV_KIND[SV_KIND.length-1])[1];
+const svName = s => s.desc || svKindLabel(s.kind);
+const svPerLabel = s => s.period==="anual" ? "anual" : "mensal";
+const svMonthly = s => s.period==="anual" ? s.price/12 : s.price;
+const svMonthlyCost = s => (s.period==="anual" ? (s.cost||0)/12 : (s.cost||0));
+const addMonths = (d,n) => { const [y,m,dd]=d.split("-").map(Number), t=new Date(y,m-1+n,1), last=new Date(t.getFullYear(),t.getMonth()+1,0).getDate(); return iso(t.getFullYear(),t.getMonth()+1,Math.min(dd,last)); };
+const svDue = () => { const lim=addDays(today(),30); return biz().services.filter(s=>s.active && s.next && s.next<=lim).sort((a,b)=>a.next.localeCompare(b.next)); };
+const svLevel = s => s.next<today() ? "late" : dayGap(today(),s.next)<=7 ? "soon" : "";
+const svRow = s => { const cl=clientById(s.clientId)||{name:"(cliente apagado)"}, pj=projectById(s.projectId);
+  return `<div class="todo ${svLevel(s)}"><span class="d">${s.next<today()?"atrasada · ":""}${dmy(s.next)}</span>
+    <div><button type="button" class="lnk" data-sv="${s.id}">${esc(svName(s))}</button> · ${esc(cl.name)}<small>${[s.desc&&svKindLabel(s.kind), pj&&pj.name].filter(Boolean).map(esc).concat(`${fmt(s.price)} ${svPerLabel(s)}`).join(" · ")}</small></div>
+    <button type="button" data-renew="${s.id}">Renovado</button></div>`; };
+function renderServices(){
+  const b=biz(), act=b.services.filter(s=>s.active), mrr=act.reduce((x,s)=>x+svMonthly(s),0), mcost=act.reduce((x,s)=>x+svMonthlyCost(s),0), due=svDue();
+  const ns=n=>`${n} serviço${n===1?"":"s"}`;
+  $("svKpis").innerHTML=[
+    ["Receita recorrente mensal", fmt(mrr), `${ns(act.length)} ativo${act.length===1?"":"s"}`],
+    ["Receita recorrente anual", fmt(mrr*12), mcost ? `com ${fmt(mcost*12)} de custos teus por ano` : "sem custos teus registados"],
+    ["Margem recorrente", `<span class="${mrr-mcost>=0?"down":"up"}">${fmt(mrr-mcost)}</span>`, "por mês, já sem os teus custos"],
+    ["Renovações a 30 dias", String(due.length), due.length ? `${fmt(due.reduce((x,s)=>x+s.price,0))} a cobrar` : "nenhuma"]
+  ].map(kpiHtml).join("");
+  $("svDuePanel").hidden=!due.length; $("svDueCount").textContent=ns(due.length);
+  $("svDue").innerHTML=due.map(svRow).join("");
+  const q=norm($("svQ").value), st=$("svSt").value, cn=s=>(clientById(s.clientId)||{name:""}).name;
+  const list=b.services.filter(s=>(st==="all" || (st==="off")!==!!s.active) && (!q||[svName(s),svKindLabel(s.kind),cn(s)].some(v=>norm(v).includes(q))))
+    .sort((a,b)=>(b.active-a.active) || (a.next||"9999").localeCompare(b.next||"9999"));
+  $("svCount").textContent=ns(list.length);
+  $("svList").innerHTML= list.length ? `<div class="rrow rhead"><span>Serviço</span><span>Cliente</span><span class="num rb">Valor</span><span class="num rr">Custo</span><span class="num">Margem/mês</span><span class="rs">Renovação</span></div>`+list.map(s=>{ const pj=projectById(s.projectId);
+      return `<div class="rrow${s.active?"":" void"}"><div><button type="button" class="lnk" data-sv="${s.id}">${esc(svName(s))}</button><small>${s.desc?esc(svKindLabel(s.kind)):""}</small></div>
+      <div>${esc(cn(s))}<small>${pj?esc(pj.name):""}</small></div>
+      <span class="num rb">${fmt(s.price)}<small>${svPerLabel(s)}</small></span><span class="num rr">${s.cost?fmt(s.cost):"—"}</span><span class="num">${fmt(svMonthly(s)-svMonthlyCost(s))}</span>
+      <span class="rs">${s.active ? `<span class="st" style="--c:${svLevel(s)==="late"?"var(--neg)":svLevel(s)==="soon"?"var(--accent-2)":"var(--muted)"}">${dmy(s.next)}</span>` : `<span class="st" style="--c:var(--muted)">Terminado</span>`}</span></div>`; }).join("")
+    : `<p class="empty">${b.services.length?"Nenhum serviço corresponde aos filtros.":"Ainda não tens serviços recorrentes. Cria o primeiro em Novo serviço."}</p>`;
+}
+async function renewService(s){
+  s.next=addMonths(s.next||today(), s.period==="anual"?12:1); s.at=Date.now(); await save(); render();
+  toast(`${svName(s)}: próxima renovação a ${dmy(s.next)}.`, "Registar recibo", ()=>openReceipt(null, null, {clientId:s.clientId, projectId:s.projectId||"", desc:`${svName(s)} (${svPerLabel(s)})`, base:s.price}));
+}
+// Os botões dos serviços aparecem em vários sítios (separador Serviços, página do projeto): um só tratador.
+document.addEventListener("click", e=>{
+  if(!session) return;
+  const b=e.target.closest("button[data-sv], button[data-renew], button[data-newsv]"); if(!b) return;
+  if(b.dataset.sv) openService(b.dataset.sv);
+  else if(b.dataset.renew){ const s=biz().services.find(x=>x.id===b.dataset.renew); if(s) renewService(s); }
+  else if(b.dataset.newsv!==undefined){ const p=projectById(b.dataset.newsv); openService(null, p ? {clientId:p.clientId, projectId:p.id} : null); }
+});
+$("svQ").oninput=renderServices; $("svSt").onchange=renderServices;
+$("svKind").innerHTML=SV_KIND.map(([k,l])=>`<option value="${k}">${l}</option>`).join("");
+
+let editingSv=null;
+function fillSvClients(sel){
+  $("svCli").innerHTML=`<option value="">Escolhe o cliente…</option>`+sortedClients().map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join("")+`<option value="__new">+ Novo cliente…</option>`;
+  $("svCli").value=sel||"";
+}
+function fillSvProj(sel){
+  const ps=biz().projects.filter(p=>p.clientId===$("svCli").value).sort(byRecent);
+  $("svProj").innerHTML=`<option value="">Sem projeto</option>`+ps.map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join("");
+  $("svProj").value= ps.some(p=>p.id===sel) ? sel : "";
+}
+function openService(id, pre=null){
+  const s=id ? biz().services.find(x=>x.id===id) : null; editingSv=s;
+  $("svTitle").textContent= s ? "Editar serviço" : "Novo serviço recorrente";
+  fillSvClients(s?.clientId || pre?.clientId || ""); fillSvProj(s?.projectId || pre?.projectId || "");
+  $("svKind").value=s?.kind||"manutencao"; $("svDesc").value=s?.desc||""; $("svPeriod").value=s?.period||"mensal";
+  $("svPrice").value= s ? money(s.price) : ""; $("svCost").value= s?.cost ? money(s.cost) : "";
+  $("svNext").value= s?.next || addMonths(today(),1); $("svActive").checked= s ? !!s.active : true; $("svNotes").value=s?.notes||"";
+  $("svDel").hidden=!s; $("svErr").textContent="";
+  $("svDlg").showModal();
+}
+$("svCli").onchange=()=>{
+  if($("svCli").value==="__new"){ $("svCli").value=""; openClient(null, c=>{ fillSvClients(c.id); fillSvProj(""); }); return; }
+  fillSvProj("");
+};
+$("newService").onclick=()=>openService(null);
+$("svCancel").onclick=()=>$("svDlg").close();
+$("svForm").onsubmit=async e=>{
+  e.preventDefault();
+  const price=round2(parseNumber($("svPrice").value)), rawCost=$("svCost").value.trim(), cost=rawCost ? round2(parseNumber(rawCost)) : 0, next=parseDate($("svNext").value), active=$("svActive").checked;
+  const err=!clientById($("svCli").value)?"Escolhe o cliente.":!(price>0)?"O valor cobrado tem de ser maior que zero.":!(cost>=0)?"O custo tem de ser um número, zero ou mais.":(active && !next)?"Escolhe a data da próxima renovação.":"";
+  if(err){ $("svErr").textContent=err; return; }
+  const s=editingSv || {id:uid()};
+  Object.assign(s, {clientId:$("svCli").value, projectId:$("svProj").value, kind:$("svKind").value, desc:$("svDesc").value.replace(/\s+/g," ").trim(),
+    period:$("svPeriod").value, price, cost, next:next||"", active, notes:$("svNotes").value.trim(), at:Date.now()});
+  if(!editingSv) biz().services.push(s);
+  await save(); $("svDlg").close(); render(); toast(editingSv ? "Serviço guardado." : `Serviço “${svName(s)}” criado.`);
+};
+$("svDel").onclick=async()=>{
+  const s=editingSv; $("svDlg").close();
+  if(!await ask({title:`Apagar “${svName(s)}”?`, text:"Se o serviço só terminou, desmarca antes “Ativo”: fica no histórico e deixa de contar na receita recorrente. Apagar não dá para desfazer.", ok:"Apagar", danger:true})) return;
+  forget("services", s.id); await save(); render(); toast("Serviço apagado.");
+};
 
 /* ---------- recibos verdes ---------- */
 /* Só se registam aqui: são emitidos no Portal das Finanças. total = base + IVA; a receber = total − retenção na fonte.
@@ -2242,6 +2386,8 @@ function openReceipt(id, p=null, pre=null){
   $("rcDesc").value=v.desc||""; $("rcBase").value=money(v.base); $("rcIva").value=v.iva?money(v.iva):""; $("rcRet").value=v.ret?money(v.ret):"";
   const match= r ? r.clientId : p ? ((p.nif && biz().clients.find(c=>c.nif===p.nif)) || (p.name && biz().clients.find(c=>norm(c.name)===norm(p.name))) || {}).id : "";
   fillRcClients(pre ? pre.clientId : match); fillRcProj(pre ? pre.projectId : r?.projectId||"");
+  if(pre && pre.desc) $("rcDesc").value=pre.desc;
+  if(pre && pre.base) $("rcBase").value=money(pre.base);
   Object.values(RC_FIELDS).forEach(i=>$(i).classList.remove("miss"));
   if(p) for(const k of p.miss) if(!(k==="nif" && match)) $(RC_FIELDS[k]).classList.add("miss");
   const notes=[p&&p.miss.length?"Confirma os campos assinalados: não os encontrei no PDF.":"", p?.warn||""].filter(Boolean).join(" ");
