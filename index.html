@@ -105,7 +105,7 @@ button:disabled{opacity:.55;cursor:default}
   .drop.over{background:color-mix(in srgb,var(--src) 10%,var(--surface))}
 }
 
-.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:12px;overflow:hidden}
 .kpi{background:var(--surface);padding:14px 16px;display:flex;flex-direction:column;gap:2px}
 .kpi .v{font-size:1.4rem;font-weight:500}
 .kpi .d{font-size:.8rem;color:var(--muted)}
@@ -152,6 +152,10 @@ dialog.wide{width:min(560px,calc(100% - 32px))}
 .prow{display:grid;grid-template-columns:minmax(0,1fr) 170px 110px 90px;gap:10px;align-items:center;padding:9px 0;border-top:1px solid var(--line);font-size:.88rem}
 .prow:first-child{border-top:0} .prow small{display:block;color:var(--muted)} .prow select{padding:3px 6px;font-size:.82rem} .prow .num{text-align:right}
 .drop.rc{--src:var(--biz)}
+.mg{display:grid;grid-template-columns:minmax(0,1fr) 92px 82px 92px 44px;gap:8px;align-items:center;padding:7px 0;border-top:1px solid var(--line);font-size:.86rem}
+.mg:first-child{border-top:0} .mg .num{text-align:right} .mg small{display:block;color:var(--muted)} .mg a{color:var(--fg);text-decoration:none;font-weight:600} .mg a:hover{text-decoration:underline}
+.mg.h{font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;font-weight:600}
+@media (max-width:600px){ .mg{grid-template-columns:minmax(0,1fr) auto auto} .mg .mc,.mg .mp{display:none} }
 details.sect summary{cursor:pointer;font-weight:600;font-size:.9rem}
 .plangrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin:12px 0}
 .plangrid fieldset{border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin:0;display:flex;flex-direction:column;gap:8px}
@@ -391,6 +395,11 @@ dialog p{margin:0;color:var(--muted);font-size:.9rem}
   <nav class="tabs" id="bizNav" aria-label="Negócio"><a href="#negocio" data-s="painel">Painel</a><a href="#negocio/clientes" data-s="clientes">Clientes</a><a href="#negocio/projetos" data-s="projetos">Projetos</a><a href="#negocio/servicos" data-s="servicos">Serviços</a><a href="#negocio/recibos" data-s="recibos">Recibos<span class="badge" id="rcBadge" hidden></span></a><a href="#negocio/definicoes" data-s="definicoes">Definições</a></nav>
   <div class="subview" data-sub="painel">
   <section class="kpis" id="bizKpis"></section>
+  <section class="grid2">
+    <div class="panel"><div class="panel-h"><h2>Reserva para impostos</h2><a class="linkbtn" href="#negocio/definicoes">Percentagens</a></div><div id="taxBody"></div></div>
+    <div class="panel"><div class="panel-h"><h2>Margem</h2><div class="seg" id="mgMode" role="group" aria-label="Margem por"><button type="button" data-m="client">Clientes</button><button type="button" data-m="project">Projetos</button></div></div>
+      <p class="help" style="margin:0">Faturado (valor base dos recibos) menos as despesas do negócio ligadas aos projetos, na página de cada projeto.</p><div id="mgBody"></div></div>
+  </section>
   <section class="panel" id="todoPanel">
     <div class="panel-h"><h2>A fazer</h2><span class="label num" id="todoCount"></span></div>
     <div id="todoList"></div>
@@ -452,6 +461,15 @@ dialog p{margin:0;color:var(--muted);font-size:.9rem}
 
   <div class="subview" data-sub="definicoes" hidden>
   <section class="panel">
+    <details class="rules">
+      <summary>Impostos</summary>
+      <p class="help">Percentagens para a reserva de impostos, aplicadas ao valor base dos recibos verdes emitidos (não anulados). A app não traz taxas: usa as tuas taxas efetivas — por exemplo, as que o teu contabilista indicar — e 0% de Segurança Social enquanto estiveres isenta ou isento no primeiro ano. As retenções na fonte contam como IRS já pago. Os pagamentos que estejam no extrato, nas categorias do negócio “Segurança Social” e “IRS (pagamentos)”, também se descontam.</p>
+      <div class="settings"><form id="taxForm" autocomplete="off">
+        <label class="field"><span>IRS (% do valor base)</span><input type="text" id="irsPct" inputmode="decimal" placeholder="0"></label>
+        <label class="field"><span>Segurança Social (% do valor base)</span><input type="text" id="ssPct" inputmode="decimal" placeholder="0"></label>
+        <button class="primary" type="submit">Guardar</button>
+      </form></div>
+    </details>
     <details class="rules">
       <summary>Processo comercial</summary>
       <p class="help">Os passos de cada fase do funil, um por linha. Aparecem como lista de verificação em cada projeto. Um passo com "follow" no nome desliga o lembrete de follow-up da proposta. Se mudares o nome de um passo, os projetos perdem a marca de feito desse passo.</p>
@@ -827,7 +845,7 @@ $("forgot").onclick = async ()=>{
 function lock(msg){
   if(!session) return;
   session=null; state=null;
-  $("rows").innerHTML=""; $("kpis").innerHTML=""; $("cats").innerHTML=""; $("chart").innerHTML=""; $("bizKpis").innerHTML=""; $("bizCats").innerHTML=""; $("clList").innerHTML=""; $("pjBoard").innerHTML=""; $("pjList").innerHTML=""; $("pjKpis").innerHTML=""; $("rcList").innerHTML=""; $("rcKpis").innerHTML=""; $("svList").innerHTML=""; $("svDue").innerHTML=""; $("svKpis").innerHTML="";
+  $("rows").innerHTML=""; $("kpis").innerHTML=""; $("cats").innerHTML=""; $("chart").innerHTML=""; $("bizKpis").innerHTML=""; $("bizCats").innerHTML=""; $("clList").innerHTML=""; $("pjBoard").innerHTML=""; $("pjList").innerHTML=""; $("pjKpis").innerHTML=""; $("rcList").innerHTML=""; $("rcKpis").innerHTML=""; $("svList").innerHTML=""; $("svDue").innerHTML=""; $("svKpis").innerHTML=""; $("taxBody").innerHTML=""; $("mgBody").innerHTML=""; $("pjPage").innerHTML="";
   mode="login"; setupGate();
   if(msg) $("authErr").textContent = msg;
 }
@@ -929,6 +947,7 @@ function upgradeBiz(){
   if(!state.biz.receipts){ state.biz.receipts=[]; changed=true; }
   if(!state.biz.cfg){ state.biz.cfg=CFG_DEFAULT(); changed=true; }
   if(!state.biz.services){ state.biz.services=[]; changed=true; }
+  if(!state.biz.txp){ state.biz.txp={}; changed=true; } // despesa do negócio → projeto: {txId: {p, at}}
   if(state.biz.projects.some(needsNormalize)){ state.biz.projects.forEach(normalizeProject); changed=true; }
   return changed;
 }
@@ -998,6 +1017,7 @@ function autoScope(t){
   const r=ruleMatch(t); return r && isBiz(r) ? "biz" : "personal";
 }
 let LINKED=new Set(); // ids dos movimentos ligados a um recibo verde
+let BTX=[];            // movimentos do negócio da última vista desenhada, já com categoria
 const refreshLinked = () => { LINKED=new Set(((state.biz||{}).receipts||[]).filter(r=>r.txId).map(r=>r.txId)); };
 const scopeOf = t => (state.scope||{})[t.id] || autoScope(t);
 // Guarda o âmbito à mão só quando difere do automático, para as regras continuarem a valer no resto.
@@ -1153,10 +1173,10 @@ const CA_NUM="\\d{1,3}(?:\\.\\d{3})*,\\d{2}";
 const CA_TX=new RegExp(`^(\\d{2}-\\d{2}-\\d{2,4}) \\d{2}-\\d{2}-\\d{2,4} (.+?) (${CA_NUM}) (-?${CA_NUM})$`);
 const CA_SALDO=new RegExp(`Saldo Contabil[ií]stico em \\d{2}-\\d{2}-\\d{4} (-?${CA_NUM})`,"i");
 function caStatementToTx(lines){
-  const out=[]; let bal=null, last=null, bad=0, closing=null;
+  const out=[]; let bal=null, last=null, bad=0, closing=null, closingDate=null;
   for(const l of lines){
     let m=l.text.match(CA_SALDO);
-    if(m){ if(bal===null) bal=parseNumber(m[1]); else closing=parseNumber(m[1]); last=null; continue; }
+    if(m){ if(bal===null) bal=parseNumber(m[1]); else { closing=parseNumber(m[1]); const dm=l.text.match(/em (\d{2}-\d{2}-\d{4})/i); closingDate=dm?parseDate(dm[1]):null; } last=null; continue; }
     m=l.text.match(CA_TX);
     if(m){
       if(bal===null) throw new Error("não encontrei o saldo inicial do extrato.");
@@ -1171,7 +1191,10 @@ function caStatementToTx(lines){
   }
   if(!out.length) throw new Error("não encontrei movimentos. É o Extracto Integrado do Crédito Agrícola?");
   if(bad || (closing!==null && Math.abs(closing-bal)>0.005)) throw new Error("os saldos do extrato não batem certo com os movimentos lidos, por isso não importei nada.");
-  return out.map(({page,y,items,...t})=>t);
+  // o saldo final fica guardado para o "saldo realmente disponível"
+  const res=out.map(({page,y,items,...t})=>t);
+  res.closing={date:closingDate||out[out.length-1].date, value:closing!==null?closing:bal};
+  return res;
 }
 
 /* Exportação CSV da Coverflex, pedida ao assistente da Coverflex. O formato varia de pedido para pedido
@@ -1248,13 +1271,13 @@ function mergeTx(fresh){
   return {added,dup};
 }
 async function importFiles(files, source){
-  const fresh=[], errs=[], imp=Date.now().toString(36), receipts=[]; let fixed=0;
+  const fresh=[], errs=[], imp=Date.now().toString(36), receipts=[], closings=[]; let fixed=0;
   for(const f of files){
     try{
       if(/\.pdf$/i.test(f.name) || f.type==="application/pdf"){
         const lines=await pdfLines(f);
         if(isReceiptPdf(lines)){ receipts.push({file:f, lines}); continue; }
-        fresh.push(...assignIds(caStatementToTx(lines)));
+        const ca=caStatementToTx(lines); fresh.push(...assignIds(ca)); closings.push(ca.closing);
         continue;
       }
       const rows=await readFile(f);
@@ -1281,6 +1304,7 @@ async function importFiles(files, source){
     fresh.forEach(t=>t.imp=imp);
     const {added,dup}=mergeTx(fresh);
     if(added) (state.imports ||= []).push({id:imp, at:new Date().toISOString(), files:files.map(f=>f.name), n:added});
+    for(const c of closings) addBalance(c);
     await save();
     if(added) period=latestMonth();
     render(); msg=`${added} movimento${added===1?"":"s"} importado${added===1?"":"s"}`+(dup?`, ${dup} já existiam`:"")+"."+(fixed?` ${fixed===1?"1 valor da Coverflex corrigido":fixed+" valores da Coverflex corrigidos"} com os movimentos que faltavam.`:"");
@@ -1321,6 +1345,7 @@ $("restoreFile").onchange=async e=>{
   if(data.splits) state.splits=Object.assign({}, data.splits, state.splits||{});
   if(data.notes) state.notes=Object.assign({}, data.notes, state.notes||{});
   if(data.scope) state.scope=Object.assign({}, data.scope, state.scope||{});
+  if(data.balances){ const k=b=>b.date+"|"+b.value+"|"+(b.manual?1:0), have=new Set((state.balances||[]).map(k)); state.balances=[...(state.balances||[]), ...data.balances.filter(b=>!have.has(k(b)))]; }
   if(data.bizStart && (data.bizStartAt||0)>(state.bizStartAt||0)){ state.bizStart=data.bizStart; state.bizStartAt=data.bizStartAt; }
   mergeBiz(data.biz);
   if(data.mine) state.mine=[...new Set([...(state.mine||[]), ...data.mine])];
@@ -1403,19 +1428,17 @@ function render(){
   if(period!=="all"){ const i=months.indexOf(period); if(i>0){ const pm=months[i-1]; prevExp=sumOut(pt.filter(t=>t.m===pm&&!isExcl(t.cat))); } }
   const delta=prevExp? (exp-prevExp)/prevExp*100 : null;
   const bIn=sumIn(bcur), bOut=sumOut(bcur), bRes=bIn-bOut;
+  BTX=bt; const tr=taxReserve(), bal=accountBalance();
+  const avail = bal ? [`<span class="${bal.value-tr.total>=0?'down':'up'}">${fmt(bal.value-tr.total)}</span>`, `conta ${fmt(bal.value)} − impostos ${fmt(tr.total)}`] : ["—", "importa um extrato do CA em PDF ou indica o saldo"];
   $("kpis").innerHTML=[
+    ["Saldo realmente disponível", avail[0], avail[1], "#negocio"],
     ["Despesas pessoais", fmt(exp), delta===null? (period==="all"?`${months.length} ${months.length===1?"mês":"meses"}`:"sem mês anterior") : `<span class="${delta>0?'up':'down'}">${delta>0?'+':''}${delta.toFixed(0)}%</span> vs mês anterior`],
     ["Receitas pessoais", fmt(inc), "sem transferências"],
     ["Saldo do período", `<span class="${inc-exp>=0?'down':'up'}">${fmt(inc-exp)}</span>`, inc>0? `poupança de ${((inc-exp)/inc*100).toFixed(0)}%` : "&nbsp;"],
     ["Cartão refeição gasto", fmt(meal), mealIn? `carregado ${fmt(mealIn)}` : "Coverflex"],
     ["Negócio", `<span class="${bRes>=0?'down':'up'}">${fmt(bRes)}</span>`, bcur.length? `entradas ${fmt(bIn)} · despesas ${fmt(bOut)}` : "sem movimentos neste período", "#negocio"]
   ].map(kpiHtml).join("");
-  $("bizKpis").innerHTML=[
-    ["Entradas do negócio", fmt(bIn), nMov(bcur.filter(t=>t.amount>0).length)],
-    ["Despesas do negócio", fmt(bOut), nMov(bcur.filter(t=>t.amount<0).length)],
-    ["Resultado", `<span class="${bRes>=0?'down':'up'}">${fmt(bRes)}</span>`, bIn>0? `margem de ${(bRes/bIn*100).toFixed(0)}%` : "&nbsp;"],
-    ["Início de atividade", state.bizStart.split("-").reverse().join("/"), "antes desta data, tudo é pessoal"]
-  ].map(kpiHtml).join("");
+  renderBizKpis(bt); renderTax(tr, bal); renderMargins();
   renderChart(pt,months); renderCats(pcur,pt,months,"cats","catPeriod"); renderCats(bcur,bt,months,"bizCats","bizCatPeriod");
   renderDonut(pcur); renderTop5(pcur); renderTable(cur); renderClients(); renderProjects(); renderReceipts(); renderServices(); renderTodo();
   if(view==="negocio" && sub==="projeto") renderProjectPage();
@@ -1498,11 +1521,11 @@ function renderTable(cur){
   const rows=cur.filter(t=>(!sf||t.sc===sf)&&(!catFilter||t.cat===catFilter)&&(!src||t.source===src)&&(!q||norm(t.desc).includes(q)||norm(notes[t.id]).includes(q))).sort((a,b)=>b.date.localeCompare(a.date)||a.amount-b.amount);
   shownRows=rows; $("delShown").hidden=!rows.length || state.sample;
   $("count").textContent=`${rows.length} movimentos · ${fmt(rows.reduce((s,t)=>s+t.amount,0))}`;
-  const opts=catOptions(), rmap=new Map(biz().receipts.filter(r=>r.txId).map(r=>[r.txId,r.number]));
+  const opts=catOptions(), rmap=new Map(biz().receipts.filter(r=>r.txId).map(r=>[r.txId,r.number])), txp=biz().txp, pname=id=>{ const l=txp[id], p=l&&l.p&&projectById(l.p); return p?p.name:""; };
   const shown=rows.slice(0,showN);
   $("rows").innerHTML= rows.length? shown.map((t,i)=>`<tr>
     <td class="num">${t.date.split("-").reverse().join("/")}</td>
-    <td class="desc">${esc(t.desc)}${t.parent?`<span class="part">parte ${t.part+1}/${t.parts}</span>`:""}${rmap.has(t.id)?`<span class="part" style="color:var(--biz)" title="Pagamento deste recibo verde">recibo ${esc(rmap.get(t.id))}</span>`:""}${notes[t.id]?`<span class="note">${esc(notes[t.id])}</span>`:""}</td>
+    <td class="desc">${esc(t.desc)}${t.parent?`<span class="part">parte ${t.part+1}/${t.parts}</span>`:""}${rmap.has(t.id)?`<span class="part" style="color:var(--biz)" title="Pagamento deste recibo verde">recibo ${esc(rmap.get(t.id))}</span>`:""}${pname(t.id)?`<span class="part" style="color:var(--biz)" title="Custo deste projeto">${esc(pname(t.id))}</span>`:""}${notes[t.id]?`<span class="note">${esc(notes[t.id])}</span>`:""}</td>
     <td><span class="src ${t.source}">${t.source==="ca"?"Conta CA":"Coverflex"}</span>${t.manual?' <span class="ov">à mão</span>':''}</td>
     <td><button type="button" class="scp ${t.sc}" data-sc="${i}" title="Âmbito: carrega para passar para ${t.sc==="biz"?"pessoal":"negócio"}">${t.sc==="biz"?"Negócio":"Pessoal"}</button><select data-i="${i}" aria-label="Categoria">${opts}</select>${state.overrides[t.id]===t.cat?' <span class="ov">manual</span>':''}</td>
     <td class="amt num" style="color:${t.amount<0?'var(--fg)':'var(--pos)'}">${fmt(t.amount)}</td>
@@ -1723,6 +1746,7 @@ function mergeBiz(theirs){
   if(!theirs) return;
   const b=biz(), gone=b.gone;
   if(theirs.cfg && (theirs.cfg.at||0)>(b.cfg.at||0)) b.cfg=theirs.cfg;
+  for(const [id,v] of Object.entries(theirs.txp||{})) if(!b.txp[id] || (v.at||0)>(b.txp[id].at||0)) b.txp[id]=v;
   for(const [id,at] of Object.entries(theirs.gone||{})) gone[id]=Math.max(gone[id]||0, at);
   for(const list of ["clients","projects","receipts","services"]){
     const m=new Map(b[list].map(r=>[r.id,r]));
@@ -1827,7 +1851,8 @@ function pjMoney(p){
   const c=cfg(), value=p.value||0, chg=round2((p.changes||[]).reduce((s,x)=>s+(x.value||0),0)), total=round2(value+chg);
   const rcs=biz().receipts.filter(r=>r.projectId===p.id && r.status!=="void"), billed=round2(rcs.reduce((s,r)=>s+r.base,0));
   const dep=round2(value*c.depositPct/100);
-  return {chg, total, rcs, billed, received:round2(rcs.filter(r=>r.status==="paid").reduce((s,r)=>s+rcNet(r),0)),
+  const costTx=BTX.filter(t=>(biz().txp[t.id]||{}).p===p.id).sort((a,b)=>b.date.localeCompare(a.date));
+  return {chg, total, rcs, billed, costTx, costs:round2(-costTx.reduce((s,t)=>s+t.amount,0)), received:round2(rcs.filter(r=>r.status==="paid").reduce((s,r)=>s+rcNet(r),0)),
     dep, fin:round2(value-dep), left:round2(Math.max(0,total-billed)), cap:round2(value*c.changeCapPct/100)};
 }
 /* Lembretes de um projeto: a próxima ação e o que o processo pede — follow-up e validade da proposta, faturar a
@@ -1968,7 +1993,9 @@ function renderProjectPage(){
           ${m.chg?`<span>Alterações</span><span class="num">${fmt(m.chg)}</span>`:""}
           <span>Faturado</span><span class="num">${fmt(m.billed)}</span>
           <span>Recebido (sem retenção)</span><span class="num">${fmt(m.received)}</span>
-          <span class="tot">Por faturar</span><span class="num tot">${fmt(m.left)}</span></div>
+          <span class="tot">Por faturar</span><span class="num tot">${fmt(m.left)}</span>
+          <span>Custos ligados</span><span class="num">${fmt(m.costs)}</span>
+          <span class="tot">Margem (faturado − custos)</span><span class="num tot ${m.billed-m.costs>=0?"down":"up"}">${fmt(m.billed-m.costs)}</span></div>
         ${m.rcs.length?`<ul class="mini">${m.rcs.map(r=>`<li><button type="button" class="lnk" data-rc="${r.id}">${esc(r.number)}</button><span class="r"><span class="muted">${dmy(r.date)}</span>${rcChip(r)}<span class="num">${fmt(r.base)}</span></span></li>`).join("")}</ul>`:""}
       </div>
     </div>
@@ -1986,6 +2013,11 @@ function renderProjectPage(){
   </section>
   <section class="panel"><div class="panel-h"><h2>Descoberta</h2><span class="label">discovery call</span></div>
     <div class="addgrid">${DISC_F.map(([k,l,h])=>`<label class="field${k==="situacao"?" wide":""}"><span>${l}</span><textarea data-f="disc.${k}" rows="3" maxlength="3000" placeholder="${esc(h)}">${v(D[k])}</textarea></label>`).join("")}</div>
+  </section>
+  <section class="panel"><div class="panel-h"><h2>Custos do projeto</h2><span class="label num">${fmt(m.costs)}</span></div>
+    <p class="help" style="margin:0">Despesas do negócio feitas para este projeto (plugins, licenças, imagens…). Contam na margem do projeto e do cliente.</p>
+    <div>${m.costTx.map(t=>`<div class="chg"><span class="num muted d">${dmy(t.date)}</span><span>${esc(t.desc)} <span class="muted">· ${esc(t.cat)}</span></span><span class="num">${fmt(t.amount)}</span><button type="button" class="rowdel" data-unlinkcost="${esc(t.id)}" title="Desligar desta despesa" aria-label="Desligar desta despesa">✕</button></div>`).join("") || `<p class="hint" style="margin:0">Sem despesas ligadas.</p>`}</div>
+    <label class="field"><span>Ligar uma despesa do negócio</span><select data-act="linkcost"><option value="">Escolhe uma despesa…</option>${freeCosts().map(t=>`<option value="${esc(t.id)}">${esc(`${dmy(t.date)} · ${t.desc} · ${fmt(t.amount)}`)}</option>`).join("")}</select></label>
   </section>
   <section class="panel"><div class="panel-h"><h2>Alterações</h2><span class="label num">${m.cap?`teto ${fmt(m.cap)} · usado ${fmt(m.chg)}`:""}</span></div>
     <p class="help" style="margin:0">Depois da entrega, cada alteração é orçamentada à parte (mínimo de ${fmt(c.changeMin)} por intervenção, até ${c.changeCapPct}% do valor inicial). Entram no total a faturar do projeto.</p>
@@ -2010,6 +2042,7 @@ $("pjPage").addEventListener("change", async e=>{
   const t=e.target;
   if(t.id==="pjTplSel"){ pjTpl=t.value; renderProjectPage(); return; }
   if(t.dataset.act==="status"){ setStatus(p, t.value); return; }
+  if(t.dataset.act==="linkcost"){ if(!t.value) return; biz().txp[t.value]={p:p.id, at:Date.now()}; await save(); render(); toast("Despesa ligada ao projeto."); return; }
   if(t.dataset.step!==undefined){
     const k=stepKey(t.dataset.step); p.done ||= {};
     if(t.checked){ p.done[k]=today(); if(/proposta.*enviad/i.test(t.dataset.step) && !p.proposalAt) p.proposalAt=today(); } else delete p.done[k];
@@ -2027,6 +2060,7 @@ $("pjPage").addEventListener("click", async e=>{
   const p=projectById(pageId); if(!p) return;
   const b=e.target.closest("button"); if(!b) return;
   if(b.dataset.rc){ openReceipt(b.dataset.rc); return; }
+  if(b.dataset.unlinkcost){ biz().txp[b.dataset.unlinkcost]={p:"", at:Date.now()}; await save(); render(); toast("Despesa desligada do projeto."); return; }
   if(b.dataset.delchg){ p.changes=(p.changes||[]).filter(x=>x.id!==b.dataset.delchg); p.at=Date.now(); await save(); render(); toast("Alteração apagada."); return; }
   const act=b.dataset.act;
   if(act==="edit") openProject(p.id);
@@ -2107,6 +2141,7 @@ function renderBizSettings(){
     <label class="field"><span>Desde (€)</span><input type="text" inputmode="decimal" data-plan="${i}" data-pf="price" value="${String(x.price).replace(".",",")}"></label>
     <label class="field"><span>Prazo</span><input type="text" data-plan="${i}" data-pf="weeks" maxlength="40" value="${esc(x.weeks)}"></label></fieldset>`).join("");
   $("condForm").querySelectorAll("[data-c]").forEach(i=>{ const v=c[i.dataset.c]; i.value= typeof v==="number" ? String(v).replace(".",",") : (v||""); });
+  $("irsPct").value=c.irsPct ? String(c.irsPct).replace(".",",") : ""; $("ssPct").value=c.ssPct ? String(c.ssPct).replace(".",",") : "";
   $("tplGrid").innerHTML=c.templates.map(t=>`<label><span>${esc(t.name)}</span><textarea data-tpl="${t.k}" rows="7">${esc(t.text)}</textarea></label>`).join("");
 }
 $("saveSteps").onclick=async()=>{ const c=cfg(); $("stepGrid").querySelectorAll("textarea").forEach(t=>c.steps[t.dataset.stage]=splitLines(t.value).join("\n")); c.at=Date.now(); await save(); render(); toast("Passos do processo guardados."); };
@@ -2224,6 +2259,96 @@ $("svDel").onclick=async()=>{
   const s=editingSv; $("svDlg").close();
   if(!await ask({title:`Apagar “${svName(s)}”?`, text:"Se o serviço só terminou, desmarca antes “Ativo”: fica no histórico e deixa de contar na receita recorrente. Apagar não dá para desfazer.", ok:"Apagar", danger:true})) return;
   forget("services", s.id); await save(); render(); toast("Serviço apagado.");
+};
+
+/* ---------- painel do negócio: saldo, reserva para impostos, indicadores e margens ----------
+   Saldo da conta: o último saldo conhecido (o final de cada extrato do CA em PDF, ou um que indiques à mão)
+   mais os movimentos da conta CA com data posterior. A Coverflex fica de fora: só serve para refeições.
+   Reserva = IRS estimado (% do valor base dos recibos) − retenções na fonte − IRS já pago, mais Segurança
+   Social estimada − já paga. As percentagens estão nas definições; a app não traz taxas. */
+function addBalance(b){
+  state.balances=(state.balances||[]).filter(x=>!(x.date===b.date && !x.manual));
+  state.balances.push({date:b.date, value:round2(b.value)});
+}
+function accountBalance(){
+  const bs=(state.balances||[]).slice().sort((a,b)=>a.date.localeCompare(b.date) || (a.manual?1:0)-(b.manual?1:0)), last=bs[bs.length-1];
+  if(!last) return null;
+  const after=state.tx.filter(t=>t.source==="ca" && t.date>last.date).reduce((x,t)=>x+t.amount,0);
+  return {value:round2(last.value+after), date:last.date, manual:!!last.manual};
+}
+const catOrig = o => (cats().find(c=>c.orig===o)||{}).k;
+const taxCats = () => new Set([catOrig("Segurança Social"), catOrig("IRS (pagamentos)")]);
+function taxReserve(){
+  const c=cfg(), irsPct=+c.irsPct||0, ssPct=+c.ssPct||0, rs=biz().receipts.filter(r=>r.status!=="void");
+  const base=round2(rs.reduce((x,r)=>x+r.base,0)), ret=round2(rs.reduce((x,r)=>x+r.ret,0));
+  const paid=k=>round2(-BTX.filter(t=>t.cat===k).reduce((x,t)=>x+t.amount,0));
+  const irsPaid=paid(catOrig("IRS (pagamentos)")), ssPaid=paid(catOrig("Segurança Social"));
+  const irsEst=round2(base*irsPct/100), ssEst=round2(base*ssPct/100);
+  const irs=round2(Math.max(0,irsEst-ret-irsPaid)), ss=round2(Math.max(0,ssEst-ssPaid));
+  return {irsPct, ssPct, base, ret, irsEst, irsPaid, ssEst, ssPaid, irs, ss, total:round2(irs+ss), set:irsPct>0||ssPct>0};
+}
+// Despesas do negócio ainda não ligadas a nenhum projeto (sem pagamentos de impostos), as mais recentes primeiro.
+function freeCosts(){
+  const tk=taxCats(), txp=biz().txp;
+  return BTX.filter(t=>t.amount<0 && !tk.has(t.cat) && !(txp[t.id]||{}).p).sort((a,b)=>b.date.localeCompare(a.date)).slice(0,80);
+}
+// Indicadores do mês escolhido em "Período" (ou do mês atual, com "Todos os meses") e do ano dele.
+function renderBizKpis(bt){
+  const mK= period!=="all" ? period : today().slice(0,7), yK=mK.slice(0,4), mL=ymLabel(mK,true), tk=taxCats();
+  const rs=biz().receipts.filter(r=>r.status!=="void"), inY=rs.filter(r=>r.date.startsWith(yK)), sum=(l,f)=>round2(l.reduce((x,r)=>x+f(r),0));
+  const factM=sum(rs.filter(r=>r.date.startsWith(mK)),r=>r.base), factY=sum(inY,r=>r.base), paidY=sum(inY.filter(r=>r.status==="paid"),rcNet);
+  const pend=rs.filter(r=>r.status==="pending"), pendV=sum(pend,rcNet), retY=sum(inY,r=>r.ret);
+  const exp=bt.filter(t=>t.amount<0 && !tk.has(t.cat)), expY=sumOut(exp.filter(t=>t.date.startsWith(yK))), expM=sumOut(exp.filter(t=>t.m===mK)), profit=round2(factY-expY);
+  const act=biz().services.filter(x=>x.active), mrr=act.reduce((x,v)=>x+svMonthly(v),0), due=svDue().length;
+  $("bizKpis").innerHTML=[
+    [`Faturado em ${mL}`, fmt(factM), `em ${yK}: ${fmt(factY)}`],
+    [`Recebido em ${yK}`, fmt(paidY), pend.length ? `por receber: ${fmt(pendV)} (${pend.length} recibo${pend.length===1?"":"s"})` : "nada por receber", "#negocio/recibos"],
+    [`Despesas do negócio ${yK}`, fmt(expY), `em ${mL}: ${fmt(expM)} · sem impostos`],
+    [`Lucro ${yK}`, `<span class="${profit>=0?'down':'up'}">${fmt(profit)}</span>`, "faturado menos despesas, antes de impostos"],
+    ["Receita recorrente", fmt(mrr), `por mês · ${due} renovaç${due===1?"ão":"ões"} a 30 dias`, "#negocio/servicos"],
+    [`Retenções ${yK}`, fmt(retY), "IRS já pago na fonte"]
+  ].map(kpiHtml).join("");
+}
+function renderTax(tr, bal){
+  const row=(l,v,cls="")=>`<span class="${cls}">${l}</span><span class="num ${cls}">${v}</span>`, neg=v=>v?"− "+fmt(v):fmt(0);
+  $("taxBody").innerHTML=(tr.set?"":`<p class="warn" style="margin:0">Ainda não definiste as percentagens de IRS e de Segurança Social, por isso a reserva está a zero. <a href="#negocio/definicoes">Define-as em Definições › Impostos.</a></p>`)+
+    `<div class="kv">${row("Faturado (valor base dos recibos)", fmt(tr.base))}
+      ${row(`IRS estimado (${String(tr.irsPct).replace(".",",")}%)`, fmt(tr.irsEst), "muted")}${row("Retenções na fonte", neg(tr.ret), "muted")}${row("IRS já pago", neg(tr.irsPaid), "muted")}
+      ${row("IRS a reservar", fmt(tr.irs))}
+      ${row(`Segurança Social estimada (${String(tr.ssPct).replace(".",",")}%)`, fmt(tr.ssEst), "muted")}${row("Segurança Social já paga", neg(tr.ssPaid), "muted")}
+      ${row("Segurança Social a reservar", fmt(tr.ss))}
+      ${row("Total a pôr de parte", fmt(tr.total), "tot")}
+      ${bal ? row(`Saldo da conta CA (${bal.manual?"indicado":"extrato"} a ${dmy(bal.date)}, com os movimentos seguintes)`, fmt(bal.value)) + row("Saldo realmente disponível", `<span class="${bal.value-tr.total>=0?"down":"up"}">${fmt(bal.value-tr.total)}</span>`, "tot") : ""}</div>
+    ${bal ? "" : `<p class="hint" style="margin:0">Para o saldo disponível, importa um extrato do CA em PDF (o saldo final fica guardado) ou indica o saldo de hoje.</p>`}
+    <div><button type="button" id="setBalance">Indicar o saldo de hoje</button></div>`;
+}
+$("taxBody").onclick=async e=>{
+  if(!e.target.closest("#setBalance")) return;
+  let val;
+  const v=await ask({title:"Saldo da conta hoje", text:"O saldo da conta Crédito Agrícola como aparece no CA Online. A partir daqui, os movimentos com data posterior somam-se a este valor; um extrato mais recente substitui-o.", input:true, type:"text", label:"Saldo (€)", ok:"Guardar",
+    validate:x=>{ val=round2(parseNumber(x)); return isNaN(val) ? "Escreve um valor, por exemplo 1234,56." : ""; }});
+  if(v===null) return;
+  (state.balances ||= []).push({date:today(), value:val, manual:true}); await save(); render(); toast(`Saldo de hoje: ${fmt(val)}.`);
+};
+let mgMode="client";
+function renderMargins(){
+  const b=biz(), rs=b.receipts.filter(r=>r.status!=="void"), txp=b.txp;
+  const cost=pid=>round2(-BTX.filter(t=>(txp[t.id]||{}).p===pid).reduce((x,t)=>x+t.amount,0)), rev=f=>round2(rs.filter(f).reduce((x,r)=>x+r.base,0));
+  const rows=(mgMode==="project"
+    ? b.projects.map(p=>({name:p.name, sub:(clientById(p.clientId)||{}).name||"", href:"#negocio/projeto/"+p.id, rev:rev(r=>r.projectId===p.id), cost:cost(p.id)}))
+    : b.clients.map(c=>({name:c.name, sub:c.sector||"", rev:rev(r=>r.clientId===c.id), cost:round2(b.projects.filter(p=>p.clientId===c.id).reduce((x,p)=>x+cost(p.id),0))}))
+  ).filter(r=>r.rev||r.cost).sort((a,b)=>(b.rev-b.cost)-(a.rev-a.cost));
+  $("mgMode").querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed", x.dataset.m===mgMode));
+  $("mgBody").innerHTML= rows.length ? `<div class="mg h"><span>${mgMode==="project"?"Projeto":"Cliente"}</span><span class="num">Faturado</span><span class="num mc">Custos</span><span class="num">Margem</span><span class="num mp">%</span></div>`+
+    rows.map(r=>`<div class="mg"><div>${r.href?`<a href="${r.href}">${esc(r.name)}</a>`:esc(r.name)}${r.sub?`<small>${esc(r.sub)}</small>`:""}</div><span class="num">${fmt(r.rev)}</span><span class="num mc">${r.cost?fmt(r.cost):"—"}</span><span class="num ${r.rev-r.cost>=0?"down":"up"}">${fmt(r.rev-r.cost)}</span><span class="num mp muted">${r.rev?Math.round((r.rev-r.cost)/r.rev*100)+"%":""}</span></div>`).join("")
+    : `<p class="hint" style="margin:0">Aparece quando houver recibos verdes ou despesas ligadas a projetos.</p>`;
+}
+$("mgMode").onclick=e=>{ const b=e.target.closest("button[data-m]"); if(b){ mgMode=b.dataset.m; renderMargins(); } };
+$("taxForm").onsubmit=async e=>{
+  e.preventDefault();
+  const irs=$("irsPct").value.trim()?parseNumber($("irsPct").value):0, ss=$("ssPct").value.trim()?parseNumber($("ssPct").value):0;
+  if(!(irs>=0 && irs<=100) || !(ss>=0 && ss<=100)){ toast("As percentagens têm de estar entre 0 e 100."); return; }
+  const c=cfg(); c.irsPct=round2(irs); c.ssPct=round2(ss); c.at=Date.now(); await save(); render(); toast("Percentagens dos impostos guardadas.");
 };
 
 /* ---------- recibos verdes ---------- */
