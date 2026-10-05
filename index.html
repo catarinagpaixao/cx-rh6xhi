@@ -22,7 +22,7 @@
 :root{
   --bg:#f3f5f1; --surface:#ffffff; --fg:#1d2420; --muted:#5f6b63; --line:#dde3dc;
   --accent:#2f6f4f; --accent-2:#d8892b;
-  --pos:#2d7a46; --neg:#b4452f; --chip:#e9eee8;
+  --pos:#2d7a46; --neg:#b4452f; --chip:#e9eee8; --biz:#3a64b0;
   --display:ui-rounded, "SF Pro Rounded", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
   --body:-apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, Roboto, sans-serif;
   --mono:ui-monospace, "SF Mono", Menlo, Consolas, monospace;
@@ -30,7 +30,7 @@
 }
 @media (prefers-color-scheme: dark){ :root{
   --bg:#141a16; --surface:#1c241f; --fg:#e6ebe6; --muted:#9aa79e; --line:#2c3730;
-  --accent:#5fb48a; --accent-2:#eba553; --pos:#6cc38a; --neg:#ec8a74; --chip:#26302a; color-scheme:dark }}
+  --accent:#5fb48a; --accent-2:#eba553; --pos:#6cc38a; --neg:#ec8a74; --chip:#26302a; --biz:#8fb0ea; color-scheme:dark }}
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
 body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.5 var(--body);
@@ -109,6 +109,16 @@ button:disabled{opacity:.55;cursor:default}
 .kpi{background:var(--surface);padding:14px 16px;display:flex;flex-direction:column;gap:2px}
 .kpi .v{font-size:1.4rem;font-weight:500}
 .kpi .d{font-size:.8rem;color:var(--muted)}
+a.kpi{color:inherit;text-decoration:none} a.kpi:hover .label{color:var(--biz)}
+
+/* ---- pessoal / negócio ---- */
+.view,.slot{display:contents}
+.seg{display:inline-flex;align-self:flex-start;background:var(--chip);border-radius:10px;padding:3px;gap:2px}
+.seg a{padding:6px 18px;border-radius:8px;color:var(--muted);text-decoration:none;font-weight:600;font-size:.92rem}
+.seg a[aria-current=page]{background:var(--surface);color:var(--fg);box-shadow:0 1px 2px rgb(0 0 0 / .1)}
+.scp{font-size:.7rem;font-weight:600;padding:2px 8px;margin-right:6px;border-radius:99px;border:1px solid transparent;background:var(--chip);color:var(--muted);vertical-align:middle}
+.scp:hover{border-color:var(--line)}
+.scp.biz{background:color-mix(in srgb,var(--biz) 16%,transparent);color:var(--biz)}
 
 .grid2{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:22px}
 @media (max-width:820px){.grid2{grid-template-columns:minmax(0,1fr)}}
@@ -237,6 +247,8 @@ dialog p{margin:0;color:var(--muted);font-size:.9rem}
     </div>
   </header>
 
+  <nav class="seg" aria-label="Vista"><a href="#pessoal" data-v="pessoal">Pessoal</a><a href="#negocio" data-v="negocio">Negócio</a></nav>
+
   <div class="banner" id="emptyBanner" hidden>
     <span>Ainda não tens movimentos. Importa um extrato abaixo, ou explora primeiro com dados inventados.</span>
     <button id="loadSample">Ver com dados de exemplo</button>
@@ -246,6 +258,7 @@ dialog p{margin:0;color:var(--muted);font-size:.9rem}
     <button id="clearSample">Limpar exemplo</button>
   </div>
 
+  <div class="view" data-view="pessoal">
   <section class="imports">
     <label class="drop ca" id="dropCA">
       <span class="dot">CA</span>
@@ -282,10 +295,12 @@ dialog p{margin:0;color:var(--muted);font-size:.9rem}
     </div>
   </section>
 
-  <section class="panel">
+  <div class="slot" id="txSlot">
+  <section class="panel" id="txPanel">
     <div class="panel-h"><h2>Movimentos</h2><span class="label num" id="count"></span></div>
     <div class="filters">
       <input type="search" id="q" placeholder="Procurar descrição ou comentário…" aria-label="Procurar">
+      <select id="fScope" aria-label="Âmbito"><option value="personal">Pessoal</option><option value="biz">Negócio</option><option value="">Todos os âmbitos</option></select>
       <select id="fCat" aria-label="Categoria"></select>
       <select id="fSrc" aria-label="Origem"><option value="">Todas as origens</option><option value="ca">Conta CA</option><option value="cf">Coverflex</option></select>
       <button class="primary" id="addBtn" type="button">Adicionar movimento</button>
@@ -297,6 +312,35 @@ dialog p{margin:0;color:var(--muted);font-size:.9rem}
     </table></div>
     <button class="more" id="more" hidden>Mostrar mais</button>
   </section>
+  </div>
+  </div>
+
+  <div class="view" data-view="negocio" hidden>
+  <section class="kpis" id="bizKpis"></section>
+  <section class="panel">
+    <div class="panel-h"><h2>Despesas do negócio por categoria</h2><span class="label" id="bizCatPeriod"></span></div>
+    <div class="cats" id="bizCats"></div>
+  </section>
+  <div class="slot" id="bizTxSlot"></div>
+  <section class="panel">
+    <details class="rules">
+      <summary>Regras do negócio</summary>
+      <p class="help">As palavras-chave destas categorias marcam os movimentos como negócio automaticamente, a partir da data de início de atividade. Funcionam como as regras pessoais. Se a mesma palavra-chave estiver numa categoria pessoal e numa do negócio, ganha a pessoal: muda então o âmbito do movimento na tabela (Pessoal / Negócio) e a categoria do negócio acerta sozinha. Despesas usadas nas duas coisas dividem-se com a tesoura, e cada parte tem o seu âmbito.</p>
+      <div class="rulegrid" id="bizRulegrid"></div>
+      <div class="filters" style="margin-top:12px"><button class="primary" id="saveBizRules">Guardar regras</button><button type="button" id="newBizCat">Nova categoria do negócio</button></div>
+    </details>
+    <details class="rules">
+      <summary>Início de atividade</summary>
+      <div class="settings">
+        <p class="help" style="margin:0">Os movimentos anteriores a esta data ficam pessoais, mesmo que batam com uma regra do negócio. Os que marcares à mão como negócio contam sempre. Usa a data de início de atividade declarada nas Finanças.</p>
+        <form id="bizStartForm" autocomplete="off">
+          <label class="field"><span>Data de início</span><input type="date" id="bizStart"></label>
+          <button type="submit">Guardar</button>
+        </form>
+      </div>
+    </details>
+  </section>
+  </div>
 
   <section class="panel">
     <details class="rules">
@@ -306,9 +350,9 @@ dialog p{margin:0;color:var(--muted);font-size:.9rem}
     </details>
     <details class="rules">
       <summary>Categorias</summary>
-      <p class="help">Podes criar categorias e mudar o nome de qualquer uma; as regras e as escolhas manuais acompanham o nome novo. As de origem não se apagam. Três têm um papel especial que se mantém com qualquer nome: a de entradas sem regra (Rendimentos), a de despesas sem regra (Outros) e a que fica fora dos totais (Transferências).</p>
+      <p class="help">Podes criar categorias e mudar o nome de qualquer uma; as regras e as escolhas manuais acompanham o nome novo. As de origem não se apagam. Três têm um papel especial que se mantém com qualquer nome: a de entradas sem regra (Rendimentos), a de despesas sem regra (Outros) e a que fica fora dos totais (Transferências). No negócio, as entradas sem regra vão para Receitas do negócio e as despesas para Outros (negócio). Escolher uma categoria do negócio num movimento passa-o para o negócio.</p>
       <div id="catList"></div>
-      <div class="filters" style="margin-top:10px"><button class="primary" type="button" id="newCat">Nova categoria</button></div>
+      <div class="filters" style="margin-top:10px"><button class="primary" type="button" id="newCat">Nova categoria</button><button type="button" id="newCatBiz">Nova categoria do negócio</button></div>
     </details>
     <details class="rules">
       <summary>Regras de categorização</summary>
@@ -365,6 +409,7 @@ dialog p{margin:0;color:var(--muted);font-size:.9rem}
     <label class="field"><span>Tipo</span><select id="aKind"><option value="-1">Despesa</option><option value="1">Receita</option></select></label>
     <label class="field"><span>Valor (€)</span><input type="text" id="aAmt" inputmode="decimal" placeholder="12,50" autocomplete="off"></label>
     <label class="field"><span>Origem</span><select id="aSrc"><option value="ca">Conta CA</option><option value="cf">Coverflex</option></select></label>
+    <label class="field wide"><span>Âmbito</span><select id="aScope"><option value="">Automático (pelas regras)</option><option value="personal">Pessoal</option><option value="biz">Negócio</option></select></label>
     <label class="field wide"><span>Descrição</span><input type="text" id="aDesc" maxlength="120" autocomplete="off" placeholder="Ex.: jantar com amigos (dinheiro)"></label>
     <label class="field wide"><span>Categoria</span><select id="aCat"></select></label>
     <label class="field wide"><span>Comentário (opcional)</span><input type="text" id="aNote" maxlength="300" autocomplete="off"></label>
@@ -515,7 +560,7 @@ $("forgot").onclick = async ()=>{
 function lock(msg){
   if(!session) return;
   session=null; state=null;
-  $("rows").innerHTML=""; $("kpis").innerHTML=""; $("cats").innerHTML=""; $("chart").innerHTML="";
+  $("rows").innerHTML=""; $("kpis").innerHTML=""; $("cats").innerHTML=""; $("chart").innerHTML=""; $("bizKpis").innerHTML=""; $("bizCats").innerHTML="";
   mode="login"; setupGate();
   if(msg) $("authErr").textContent = msg;
 }
@@ -568,7 +613,17 @@ const CATS = [
   {k:"Impostos e Estado", c:"#8c5a5a", kw:"autoridade tributaria, financas, seg social, seguranca social, iuc, imi, irs, portal das financas"},
   {k:"Banco e comissões", c:"#806f8f", kw:"comissao, imposto selo, manutencao conta, anuidade, juros devedores"},
   {k:"Transferências", c:"#8a95a0", kw:"trf, transf, transferencia, sepa, trf.p/, trf de, trf para"},
-  {k:"Outros", c:"#9aa39c", kw:""}
+  {k:"Outros", c:"#9aa39c", kw:""},
+  // Negócio (trabalho independente). Ficam depois das pessoais: em empate de palavra-chave, ganha a pessoal.
+  {k:"Receitas do negócio", c:"#1f6f8b", biz:true, kw:""},
+  {k:"Domínios", c:"#3d5a99", biz:true, kw:"namecheap, godaddy, porkbun, gandi, dns pt, amen pt, dominios pt"},
+  {k:"Alojamento", c:"#5b6fc7", biz:true, kw:"hostinger, siteground, ptisp, ovh, hetzner, digitalocean, vercel, netlify, cloudflare, webhs, bluehost, kinsta"},
+  {k:"Software", c:"#7c4dab", biz:true, kw:"figma, adobe, github, jetbrains, elementor, envato, themeforest, wpengine, wp engine, framer, webflow"},
+  {k:"Equipamento", c:"#946b2d", biz:true, kw:""},
+  {k:"Publicidade", c:"#c4508a", biz:true, kw:"facebk, facebook ads, meta platforms, google ads, linkedin ads"},
+  {k:"Segurança Social", c:"#7a5c45", biz:true, kw:"seg social, seguranca social"},
+  {k:"IRS (pagamentos)", c:"#a3524a", biz:true, kw:"irs"},
+  {k:"Outros (negócio)", c:"#8794a8", biz:true, kw:""}
 ];
 /* Cada conta tem a sua lista de categorias (state.cats), criada a partir de CATS. O nome pode mudar;
    o papel das três especiais fica: "income" recebe entradas sem regra (e as regras dela só valem para
@@ -576,13 +631,35 @@ const CATS = [
    de origem, para "Repor regras de origem" funcionar depois de mudar nomes. */
 // Cores de origem antes da paleta validada (2026-10): contas antigas com estas cores recebem as novas.
 const OLD_COLORS = {"Supermercado": "#3f8f6b", "Restauração": "#d8892b", "Transportes": "#4a7fb5", "Casa": "#7a6bb0", "Saúde": "#c2557a", "Subscrições": "#9c6b3e", "Compras": "#b0794a", "Lazer": "#5a8f3a"};
-const ROLE_OF = {"Rendimentos":"income", "Transferências":"transfer", "Outros":"other"};
+const ROLE_OF = {"Rendimentos":"income", "Transferências":"transfer", "Outros":"other", "Receitas do negócio":"bizIncome", "Outros (negócio)":"bizOther"};
 const NEW_COLORS = ["#a0522d","#2f8f9d","#8e5bb0","#b8962e","#5d7fa3","#c06c3e","#6a8e23","#d1495b"];
-function defaultCats(){ return CATS.map(c=>({k:c.k, c:c.c, orig:c.k, ...(ROLE_OF[c.k]?{role:ROLE_OF[c.k]}:{})})); }
+function defaultCats(){ return CATS.map(c=>({k:c.k, c:c.c, orig:c.k, ...(c.biz?{biz:true}:{}), ...(ROLE_OF[c.k]?{role:ROLE_OF[c.k]}:{})})); }
 const cats = () => state && state.cats || defaultCats();
 const catByRole = role => cats().find(c=>c.role===role).k;
 const isExcl = k => cats().some(c=>c.k===k && c.role==="transfer");
+const isBiz = k => cats().some(c=>c.k===k && c.biz);
 const colorOf = k => (cats().find(c=>c.k===k)||{}).c;
+/* Contas anteriores ao negócio recebem as categorias do negócio uma vez, ao abrir. A data de início de
+   atividade fica a de hoje: os movimentos que já existiam continuam pessoais. */
+const today = () => { const n=new Date(); return iso(n.getFullYear(),n.getMonth()+1,n.getDate()); };
+function upgradeBiz(){
+  let changed=false;
+  if(!state.cats.some(c=>c.biz)){
+    const d=defaultRules();
+    for(const c of CATS.filter(c=>c.biz)){
+      let k=c.k; if(cats().some(x=>norm(x.k)===norm(k))) k+=" (negócio)";
+      state.cats.push({k, c:c.c, orig:c.k, biz:true, ...(ROLE_OF[c.k]?{role:ROLE_OF[c.k]}:{})});
+      if(state.rules[k]===undefined) state.rules[k]=d[c.k];
+    }
+    if(!state.bizStart) state.bizStart=today();
+    // movimentos de hoje ou com data futura que batam com uma regra do negócio também ficam pessoais
+    RULES=compiledRules();
+    for(const t of viewTx()) if(autoScope(t)==="biz") (state.scope ||= {})[t.id]="personal";
+    changed=true;
+  }
+  if(!state.bizStart){ state.bizStart=today(); changed=true; }
+  return changed;
+}
 /* Palavras-chave acrescentadas depois da primeira versão. Contas antigas recebem-nas uma vez,
    ao abrir; não voltam a ser acrescentadas se as apagares. Transferências de e para pessoas
    contam: as enviadas em "MB WAY / Pessoas", as recebidas em Rendimentos. */
@@ -624,19 +701,47 @@ const ICON={
   split:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg>'
 };
 let RULES = [];
-function compiledRules(){ return cats().map(c=>({k:c.k, role:c.role, kws:splitKw(state.rules[c.k]).map(clean).filter(Boolean)})); }
+function compiledRules(){ return cats().map(c=>({k:c.k, role:c.role, biz:!!c.biz, kws:splitKw(state.rules[c.k]).map(clean).filter(Boolean)})); }
 /* Descrição e palavras-chave são limpas da mesma maneira (sem acentos nem símbolos) e cada
    palavra-chave tem de começar no início de uma palavra. As regras criadas a partir de um
    movimento ("Criar regra") ganham sempre; entre as restantes ganha a mais comprida, por isso
-   "uber eats" vence "uber". Em empate, ganha a primeira categoria pela ordem da lista. */
-function categorize(t){
-  if(state.overrides[t.id]) return state.overrides[t.id];
+   "uber eats" vence "uber". Em empate, ganha a primeira categoria pela ordem da lista.
+   biz: só as regras do negócio (true), só as pessoais (false) ou todas (undefined). */
+function ruleMatch(t, biz){
   const d=" "+clean(t.desc)+" ", mine=new Set(state.mine||[]); let best=null, score=0;
   for(const r of RULES){
-    if(r.role==="income" && t.amount<0) continue;
+    if(biz!==undefined && r.biz!==biz) continue;
+    if((r.role==="income"||r.role==="bizIncome") && t.amount<0) continue;
     for(const kw of r.kws){ const s=kw.length+(mine.has(kw)?1000:0); if(s>score && d.includes(" "+kw)){ best=r.k; score=s; } }
   }
-  return best || catByRole(t.amount>0 ? "income" : "other");
+  return best;
+}
+/* Âmbito (pessoal ou negócio): o escolhido à mão ganha; depois a categoria escolhida à mão; antes do
+   início de atividade é sempre pessoal; a partir daí, é negócio se a regra que bate certo for do negócio. */
+function autoScope(t){
+  const o=state.overrides[t.id];
+  if(o && cats().some(c=>c.k===o)) return isBiz(o)? "biz" : "personal";
+  if(t.date < (state.bizStart||"")) return "personal";
+  const r=ruleMatch(t); return r && isBiz(r) ? "biz" : "personal";
+}
+const scopeOf = t => (state.scope||{})[t.id] || autoScope(t);
+// Guarda o âmbito à mão só quando difere do automático, para as regras continuarem a valer no resto.
+function setScope(t, sc){
+  state.scope ||= {}; delete state.scope[t.id];
+  if(autoScope(t)!==sc) state.scope[t.id]=sc;
+}
+// A categoria é sempre do mesmo âmbito do movimento; uma escolha manual do outro âmbito é ignorada.
+function categorize(t, sc=scopeOf(t)){
+  const biz=sc==="biz", o=state.overrides[t.id];
+  if(o && cats().some(c=>c.k===o) && isBiz(o)===biz) return o;
+  return ruleMatch(t, biz) || catByRole(biz ? (t.amount>0?"bizIncome":"bizOther") : (t.amount>0?"income":"other"));
+}
+// Opções de categoria agrupadas por âmbito; com sc, só as desse âmbito.
+function catOptions(sc){
+  const opt=list=>list.map(c=>`<option>${esc(c.k)}</option>`).join("");
+  const p=cats().filter(c=>!c.biz), b=cats().filter(c=>c.biz);
+  if(sc) return opt(sc==="biz"? b : p);
+  return `<optgroup label="Pessoal">${opt(p)}</optgroup><optgroup label="Negócio">${opt(b)}</optgroup>`;
 }
 
 /* ---------- leitura de ficheiros ---------- */
@@ -861,7 +966,7 @@ function coverflexToTx(rows, known){
 }
 
 function mergeTx(fresh){
-  if(state.sample){ state.tx=[]; state.overrides={}; state.sample=false; }
+  if(state.sample){ state.tx=[]; state.overrides={}; state.scope={}; state.sample=false; }
   const ids=new Set(state.tx.map(t=>t.id)); let added=0, dup=0;
   for(const t of fresh){ if(ids.has(t.id)) dup++; else { state.tx.push(t); ids.add(t.id); added++; } }
   return {added,dup};
@@ -930,9 +1035,12 @@ $("restoreFile").onchange=async e=>{
   Object.assign(state.overrides, data.overrides||{});
   if(data.rules) for(const k in data.rules){ const mine=new Set(String(state.rules[k]||"").split(",").map(s=>s.trim()).filter(Boolean)); String(data.rules[k]).split(",").map(s=>s.trim()).filter(Boolean).forEach(x=>mine.add(x)); state.rules[k]=[...mine].join(", "); }
   if(data.imports){ const have=new Set((state.imports||[]).map(i=>i.id)); state.imports=[...(state.imports||[]), ...data.imports.filter(i=>!have.has(i.id))]; }
-  if(data.cats){ const have=new Set(cats().map(c=>c.k)); const other=state.cats.findIndex(c=>c.role==="other"); state.cats.splice(other<0?state.cats.length:other, 0, ...data.cats.filter(c=>!have.has(c.k) && !c.role).map(({k,c})=>({k,c}))); }
+  if(data.cats){ const have=new Set(cats().map(c=>c.k));
+    for(const {k,c,biz} of data.cats.filter(c=>!have.has(c.k) && !c.role)){ const at=state.cats.findIndex(x=>x.role===(biz?"bizOther":"other")); state.cats.splice(at<0?state.cats.length:at, 0, {k, c, ...(biz?{biz:true}:{})}); } }
   if(data.splits) state.splits=Object.assign({}, data.splits, state.splits||{});
   if(data.notes) state.notes=Object.assign({}, data.notes, state.notes||{});
+  if(data.scope) state.scope=Object.assign({}, data.scope, state.scope||{});
+  if(data.bizStart && (data.bizStartAt||0)>(state.bizStartAt||0)){ state.bizStart=data.bizStart; state.bizStartAt=data.bizStartAt; }
   if(data.mine) state.mine=[...new Set([...(state.mine||[]), ...data.mine])];
   await save(); period=latestMonth(); renderRules(); render();
   toast(`Cópia restaurada: ${added} movimentos novos`+(dup?`, ${dup} já existiam`:"")+".");
@@ -958,18 +1066,35 @@ $("wipeBtn").onclick=async()=>{
 };
 
 /* ---------- vista ---------- */
-let period="all", catFilter="", showN=60, shownRows=[];
+let period="all", catFilter="", showN=60, shownRows=[], view="pessoal";
 function latestMonth(){ const ms=[...new Set(state.tx.map(t=>ym(t.date)))].sort(); return ms[ms.length-1]||"all"; }
 function startApp(){
   $("gate").hidden=true; $("app").hidden=false;
   $("pass").value=""; $("pass2").value="";
-  period=latestMonth(); catFilter=""; showN=60; $("q").value=""; $("fSrc").value="";
-  renderRules(); render(); bump(); scrollTo(0,0);
+  if(upgradeBiz()) save();
+  period=latestMonth(); $("q").value=""; $("fSrc").value="";
+  setView(location.hash.slice(1)); renderRules(); render(); bump(); scrollTo(0,0);
 }
+/* Duas vistas, Pessoal e Negócio, escolhidas pelo endereço (#pessoal, #negocio) para o "voltar" funcionar.
+   A tabela de movimentos é a mesma: muda de sítio e de filtro de âmbito. */
+function setView(v){
+  view= v==="negocio" ? "negocio" : "pessoal";
+  document.querySelectorAll(".view").forEach(e=>e.hidden=e.dataset.view!==view);
+  document.querySelectorAll(".seg a").forEach(a=>{ if(a.dataset.v===view) a.setAttribute("aria-current","page"); else a.removeAttribute("aria-current"); });
+  $(view==="negocio"?"bizTxSlot":"txSlot").appendChild($("txPanel"));
+  $("fScope").value= view==="negocio" ? "biz" : "personal";
+  catFilter=""; showN=60;
+}
+addEventListener("hashchange",()=>{ if(!session) return; setView(location.hash.slice(1)); render(); scrollTo(0,0); });
+const kpiHtml = ([l,v,d,href]) => href
+  ? `<a class="kpi" href="${href}"><span class="label">${l}</span><span class="v num">${v}</span><span class="d">${d}</span></a>`
+  : `<div class="kpi"><span class="label">${l}</span><span class="v num">${v}</span><span class="d">${d}</span></div>`;
+const sumIn = list => list.filter(t=>t.amount>0).reduce((s,t)=>s+t.amount,0);
+const sumOut = list => list.filter(t=>t.amount<0).reduce((s,t)=>s-t.amount,0);
 function render(){
   if(!state) return;
   RULES=compiledRules(); renderImports();
-  const tx=viewTx().map(t=>({...t, cat:categorize(t), m:ym(t.date)}));
+  const tx=viewTx().map(t=>{ const sc=scopeOf(t); return {...t, sc, cat:categorize(t,sc), m:ym(t.date)}; });
   $("emptyBanner").hidden = tx.length>0;
   $("sampleBanner").hidden = !state.sample;
   const months=[...new Set(tx.map(t=>t.m))].sort();
@@ -978,21 +1103,31 @@ function render(){
   if(period!=="all" && !months.includes(period)) period=months[months.length-1]||"all";
   ps.value=period;
   const cur=tx.filter(t=>period==="all"||t.m===period);
-  const counted=cur.filter(t=>!isExcl(t.cat));
-  const exp=-counted.filter(t=>t.amount<0).reduce((s,t)=>s+t.amount,0);
-  const inc=counted.filter(t=>t.amount>0).reduce((s,t)=>s+t.amount,0);
-  const meal=-cur.filter(t=>t.source==="cf"&&t.amount<0).reduce((s,t)=>s+t.amount,0);
-  const mealIn=cur.filter(t=>t.source==="cf"&&t.amount>0).reduce((s,t)=>s+t.amount,0);
+  // painel pessoal: só movimentos pessoais; o negócio aparece num resumo à parte
+  const pt=tx.filter(t=>t.sc==="personal"), pcur=cur.filter(t=>t.sc==="personal");
+  const bt=tx.filter(t=>t.sc==="biz"), bcur=cur.filter(t=>t.sc==="biz");
+  const counted=pcur.filter(t=>!isExcl(t.cat));
+  const exp=sumOut(counted), inc=sumIn(counted);
+  const meal=sumOut(pcur.filter(t=>t.source==="cf")), mealIn=sumIn(pcur.filter(t=>t.source==="cf"));
   let prevExp=null;
-  if(period!=="all"){ const i=months.indexOf(period); if(i>0){ const pm=months[i-1]; prevExp=-tx.filter(t=>t.m===pm&&!isExcl(t.cat)&&t.amount<0).reduce((s,t)=>s+t.amount,0); } }
+  if(period!=="all"){ const i=months.indexOf(period); if(i>0){ const pm=months[i-1]; prevExp=sumOut(pt.filter(t=>t.m===pm&&!isExcl(t.cat))); } }
   const delta=prevExp? (exp-prevExp)/prevExp*100 : null;
+  const bIn=sumIn(bcur), bOut=sumOut(bcur), bRes=bIn-bOut;
   $("kpis").innerHTML=[
-    ["Despesas", fmt(exp), delta===null? (period==="all"?`${months.length} ${months.length===1?"mês":"meses"}`:"sem mês anterior") : `<span class="${delta>0?'up':'down'}">${delta>0?'+':''}${delta.toFixed(0)}%</span> vs mês anterior`],
-    ["Receitas", fmt(inc), "sem transferências"],
+    ["Despesas pessoais", fmt(exp), delta===null? (period==="all"?`${months.length} ${months.length===1?"mês":"meses"}`:"sem mês anterior") : `<span class="${delta>0?'up':'down'}">${delta>0?'+':''}${delta.toFixed(0)}%</span> vs mês anterior`],
+    ["Receitas pessoais", fmt(inc), "sem transferências"],
     ["Saldo do período", `<span class="${inc-exp>=0?'down':'up'}">${fmt(inc-exp)}</span>`, inc>0? `poupança de ${((inc-exp)/inc*100).toFixed(0)}%` : "&nbsp;"],
-    ["Cartão refeição gasto", fmt(meal), mealIn? `carregado ${fmt(mealIn)}` : "Coverflex"]
-  ].map(([l,v,d])=>`<div class="kpi"><span class="label">${l}</span><span class="v num">${v}</span><span class="d">${d}</span></div>`).join("");
-  renderChart(tx,months); renderCats(cur,tx,months); renderDonut(cur); renderTop5(cur); renderTable(cur);
+    ["Cartão refeição gasto", fmt(meal), mealIn? `carregado ${fmt(mealIn)}` : "Coverflex"],
+    ["Negócio", `<span class="${bRes>=0?'down':'up'}">${fmt(bRes)}</span>`, bcur.length? `entradas ${fmt(bIn)} · despesas ${fmt(bOut)}` : "sem movimentos neste período", "#negocio"]
+  ].map(kpiHtml).join("");
+  $("bizKpis").innerHTML=[
+    ["Entradas do negócio", fmt(bIn), `${bcur.filter(t=>t.amount>0).length} movimentos`],
+    ["Despesas do negócio", fmt(bOut), `${bcur.filter(t=>t.amount<0).length} movimentos`],
+    ["Resultado", `<span class="${bRes>=0?'down':'up'}">${fmt(bRes)}</span>`, bIn>0? `margem de ${(bRes/bIn*100).toFixed(0)}%` : "&nbsp;"],
+    ["Início de atividade", state.bizStart.split("-").reverse().join("/"), "antes desta data, tudo é pessoal"]
+  ].map(kpiHtml).join("");
+  renderChart(pt,months); renderCats(pcur,pt,months,"cats","catPeriod"); renderCats(bcur,bt,months,"bizCats","bizCatPeriod");
+  renderDonut(pcur); renderTop5(pcur); renderTable(cur);
 }
 function niceStep(max){ const raw=max/3, p=Math.pow(10,Math.floor(Math.log10(raw||1))), n=raw/p; return (n<=1?1:n<=2?2:n<=2.5?2.5:n<=5?5:10)*p; }
 function renderChart(tx,months){
@@ -1043,17 +1178,18 @@ function renderTop5(cur){
   $("top5").innerHTML= top.length ? top.map(t=>`<li><span class="d">${esc(t.desc)}</span><span class="a num">${fmt(t.amount)}</span><small>${t.date.split("-").reverse().join("/")} · <i style="display:inline-block;width:8px;height:8px;border-radius:2px;background:${colorOf(t.cat)||"var(--muted)"};margin-right:4px"></i>${esc(t.cat)}</small></li>`).join("")
     : `<li class="empty" style="padding:0">Sem despesas${catFilter?` em ${esc(catFilter)}`:""} neste período.</li>`;
 }
-function renderCats(cur,tx,months){
-  $("catPeriod").textContent= period==="all"? "todos os meses" : ymLabel(period,true);
+function renderCats(cur,tx,months,elId,lblId){
+  $(lblId).textContent= period==="all"? "todos os meses" : ymLabel(period,true);
   const sums={}; cur.filter(t=>t.amount<0&&!isExcl(t.cat)).forEach(t=>sums[t.cat]=(sums[t.cat]||0)-t.amount);
   const total=Object.values(sums).reduce((a,b)=>a+b,0);
   const avg={};
   if(period!=="all"){ const i=months.indexOf(period), prev=months.slice(Math.max(0,i-3),i);
     if(prev.length) tx.filter(t=>prev.includes(t.m)&&t.amount<0&&!isExcl(t.cat)).forEach(t=>avg[t.cat]=(avg[t.cat]||0)-t.amount/prev.length); }
   const list=Object.entries(sums).sort((a,b)=>b[1]-a[1]);
-  if(!list.length){ $("cats").innerHTML=`<div class="empty">Sem despesas neste período.</div>`; return; }
+  const el=$(elId);
+  if(!list.length){ el.innerHTML=`<div class="empty">Sem despesas neste período.</div>`; return; }
   const max=list[0][1];
-  $("cats").innerHTML=list.map(([k,v])=>{
+  el.innerHTML=list.map(([k,v])=>{
     const a=avg[k]; let cmp="";
     if(a>0){ const p=(v-a)/a*100; if(Math.abs(p)>=5) cmp=`<span class="${p>0?'up':'down'}">${p>0?'▲':'▼'} ${Math.abs(p).toFixed(0)}% vs média 3 meses</span>`; }
     else if(period!=="all" && Object.keys(avg).length) cmp=`<span>novo este mês</span>`;
@@ -1061,28 +1197,38 @@ function renderCats(cur,tx,months){
       <div class="bar"><div style="width:${v/max*100}%;background:${colorOf(k)||'var(--muted)'}"></div></div>
       <div class="meta"><span class="num">${(v/total*100).toFixed(1)}%</span>${cmp}</div></div>`;
   }).join("");
-  $("cats").querySelectorAll(".cat").forEach(c=>{ const go=()=>{ catFilter=catFilter===c.dataset.k?"":c.dataset.k; showN=60; render(); }; c.onclick=go; c.onkeydown=e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); go(); } }; });
+  el.querySelectorAll(".cat").forEach(c=>{ const go=()=>{ catFilter=catFilter===c.dataset.k?"":c.dataset.k; showN=60; render(); }; c.onclick=go; c.onkeydown=e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); go(); } }; });
 }
 function renderTable(cur){
   const fc=$("fCat");
-  fc.innerHTML=`<option value="">Todas as categorias</option>`+cats().map(c=>`<option>${esc(c.k)}</option>`).join("");
+  fc.innerHTML=`<option value="">Todas as categorias</option>`+catOptions();
   fc.value=catFilter;
-  const q=norm($("q").value), src=$("fSrc").value, notes=state.notes||{};
-  const rows=cur.filter(t=>(!catFilter||t.cat===catFilter)&&(!src||t.source===src)&&(!q||norm(t.desc).includes(q)||norm(notes[t.id]).includes(q))).sort((a,b)=>b.date.localeCompare(a.date)||a.amount-b.amount);
+  const q=norm($("q").value), src=$("fSrc").value, sf=$("fScope").value, notes=state.notes||{};
+  const rows=cur.filter(t=>(!sf||t.sc===sf)&&(!catFilter||t.cat===catFilter)&&(!src||t.source===src)&&(!q||norm(t.desc).includes(q)||norm(notes[t.id]).includes(q))).sort((a,b)=>b.date.localeCompare(a.date)||a.amount-b.amount);
   shownRows=rows; $("delShown").hidden=!rows.length || state.sample;
   $("count").textContent=`${rows.length} movimentos · ${fmt(rows.reduce((s,t)=>s+t.amount,0))}`;
-  const opts=cats().map(c=>`<option>${esc(c.k)}</option>`).join("");
+  const opts=catOptions();
   const shown=rows.slice(0,showN);
   $("rows").innerHTML= rows.length? shown.map((t,i)=>`<tr>
     <td class="num">${t.date.split("-").reverse().join("/")}</td>
     <td class="desc">${esc(t.desc)}${t.parent?`<span class="part">parte ${t.part+1}/${t.parts}</span>`:""}${notes[t.id]?`<span class="note">${esc(notes[t.id])}</span>`:""}</td>
     <td><span class="src ${t.source}">${t.source==="ca"?"Conta CA":"Coverflex"}</span>${t.manual?' <span class="ov">à mão</span>':''}</td>
-    <td><select data-i="${i}" aria-label="Categoria">${opts}</select>${state.overrides[t.id]?' <span class="ov">manual</span>':''}</td>
+    <td><button type="button" class="scp ${t.sc}" data-sc="${i}" title="Âmbito: carrega para passar para ${t.sc==="biz"?"pessoal":"negócio"}">${t.sc==="biz"?"Negócio":"Pessoal"}</button><select data-i="${i}" aria-label="Categoria">${opts}</select>${state.overrides[t.id]===t.cat?' <span class="ov">manual</span>':''}</td>
     <td class="amt num" style="color:${t.amount<0?'var(--fg)':'var(--pos)'}">${fmt(t.amount)}</td>
     <td class="acts"><button class="rowdel${notes[t.id]?" has":""}" type="button" data-n="${i}" title="${notes[t.id]?"Editar comentário":"Escrever comentário"}" aria-label="Comentário">${ICON.note}</button><button class="rowdel${t.parent?" has":""}" type="button" data-s="${i}" title="${t.parent?"Editar divisão":"Dividir em partes"}" aria-label="Dividir">${ICON.split}</button><button class="rowdel" type="button" data-d="${i}" title="Apagar este movimento" aria-label="Apagar este movimento">✕</button></td></tr>`).join("")
     : `<tr><td colspan="6" class="empty">${state.tx.length?"Nenhum movimento corresponde aos filtros.":"Os movimentos importados aparecem aqui."}</td></tr>`;
   $("rows").querySelectorAll("select").forEach(s=>{ const t=shown[+s.dataset.i]; s.value=t.cat;
-    s.onchange=async()=>{ state.overrides[t.id]=s.value; await save(); render(); if(!t.parent) offerRule(t,s.value); }; });
+    s.onchange=async()=>{
+      state.overrides[t.id]=s.value;
+      // escolher uma categoria do outro âmbito muda o âmbito: o escolhido à mão deixa de valer
+      if(state.scope && state.scope[t.id] && state.scope[t.id]!==(isBiz(s.value)?"biz":"personal")) delete state.scope[t.id];
+      await save(); render(); if(!t.parent) offerRule(t,s.value); }; });
+  $("rows").querySelectorAll("button[data-sc]").forEach(b=>{ const t=shown[+b.dataset.sc];
+    b.onclick=async()=>{
+      const to=t.sc==="biz"?"personal":"biz";
+      setScope(t,to); await save(); render();
+      toast(`Movimento passou para ${to==="biz"?"o negócio":"o pessoal"}.`,"Anular",async()=>{ setScope(t,t.sc); await save(); render(); });
+    }; });
   $("rows").querySelectorAll("button[data-s]").forEach(b=>{ const t=shown[+b.dataset.s]; b.onclick=()=>openSplit(t.parent||t.id); });
   $("rows").querySelectorAll("button[data-n]").forEach(b=>{ const t=shown[+b.dataset.n];
     b.onclick=async()=>{
@@ -1116,12 +1262,12 @@ function viewTx(){
 }
 function clearSplit(id){
   if(state.splits) delete state.splits[id];
-  for(const m of [state.overrides, state.notes||{}]) for(const k in m) if(k.startsWith(id+"~")) delete m[k];
+  for(const m of [state.overrides, state.notes||{}, state.scope||{}]) for(const k in m) if(k.startsWith(id+"~")) delete m[k];
 }
 function removeTx(pred){
   const gone=state.tx.filter(pred), ids=new Set(gone.map(t=>t.id));
   state.tx=state.tx.filter(t=>!ids.has(t.id));
-  for(const id of ids){ delete state.overrides[id]; if(state.notes) delete state.notes[id]; clearSplit(id); }
+  for(const id of ids){ delete state.overrides[id]; if(state.notes) delete state.notes[id]; if(state.scope) delete state.scope[id]; clearSplit(id); }
   if(state.imports) state.imports=state.imports.map(i=>({...i, n:state.tx.filter(t=>t.imp===i.id).length})).filter(i=>i.n>0);
   return gone.length;
 }
@@ -1153,7 +1299,7 @@ function offerRule(t,cat){
     await save(); renderRules(); render(); toast(`Regra criada: “${kw}” → ${cat}.`);
   });
 }
-const ROLE_LABEL={income:"entradas sem regra", other:"despesas sem regra", transfer:"fora dos totais"};
+const ROLE_LABEL={income:"entradas sem regra", other:"despesas sem regra", transfer:"fora dos totais", bizIncome:"entradas do negócio sem regra", bizOther:"despesas do negócio sem regra"};
 function catName(v, except){
   const n=String(v||"").replace(/\s+/g," ").trim();
   if(!n) return {err:"Escreve um nome."};
@@ -1168,7 +1314,7 @@ function renameCat(old, n){
   if(catFilter===old) catFilter=n;
 }
 function renderCatList(){
-  $("catList").innerHTML=cats().map((c,i)=>`<div class="catrow"><i class="sw" style="background:${c.c}"></i><span class="nm">${esc(c.k)}${c.role?`<span class="ov">(${ROLE_LABEL[c.role]})</span>`:""}</span>
+  $("catList").innerHTML=cats().map((c,i)=>`<div class="catrow"><i class="sw" style="background:${c.c}"></i><span class="nm">${c.biz?'<span class="scp biz">Negócio</span>':""}${esc(c.k)}${c.role?`<span class="ov">(${ROLE_LABEL[c.role]})</span>`:""}</span>
     <button type="button" data-ren="${i}">Mudar nome</button>${c.orig?"":`<button type="button" class="danger" data-del="${i}">Apagar</button>`}</div>`).join("");
   $("catList").querySelectorAll("button[data-ren]").forEach(b=>b.onclick=async()=>{
     const c=cats()[+b.dataset.ren], old=c.k; let n;
@@ -1187,19 +1333,24 @@ function renderCatList(){
     await save(); renderRules(); render(); toast(`Categoria “${c.k}” apagada.`);
   });
 }
-$("newCat").onclick=async()=>{
+async function newCategory(biz){
   let n;
-  const v=await ask({title:"Nova categoria", text:"Depois, acrescenta-lhe palavras-chave em Regras de categorização, ou escolhe-a num movimento e cria uma regra a partir dele.", input:true, type:"text", label:"Nome", maxlength:40, ok:"Criar",
+  const v=await ask({title: biz?"Nova categoria do negócio":"Nova categoria", text:`Depois, acrescenta-lhe palavras-chave em ${biz?"Regras do negócio":"Regras de categorização"}, ou escolhe-a num movimento e cria uma regra a partir dele.`, input:true, type:"text", label:"Nome", maxlength:40, ok:"Criar",
     validate:v=>{ const r=catName(v); n=r.n; return r.err||""; }});
   if(v===null) return;
   const used=new Set(cats().map(c=>c.c)), color=NEW_COLORS.find(c=>!used.has(c))||NEW_COLORS[state.cats.length%NEW_COLORS.length];
-  const at=state.cats.findIndex(c=>c.role==="transfer"); // antes de Transferências e Outros
-  state.cats.splice(at<0?state.cats.length:at, 0, {k:n, c:color}); state.rules[n]="";
+  const at=state.cats.findIndex(c=>c.role===(biz?"bizOther":"transfer")); // antes de Transferências e Outros, ou de Outros (negócio)
+  state.cats.splice(at<0?state.cats.length:at, 0, {k:n, c:color, ...(biz?{biz:true}:{})}); state.rules[n]="";
   await save(); renderRules(); render(); toast(`Categoria “${n}” criada.`);
-};
+}
+$("newCat").onclick=()=>newCategory(false);
+$("newCatBiz").onclick=$("newBizCat").onclick=()=>newCategory(true);
 function renderRules(){
   renderCatList();
-  $("rulegrid").innerHTML=cats().filter(c=>c.role!=="other").map((c,i)=>`<label for="r${i}"><span><i style="display:inline-block;width:9px;height:9px;border-radius:2px;background:${c.c};margin-right:6px"></i>${esc(c.k)}${isExcl(c.k)?' <span class="ov">(fora dos totais)</span>':''}</span><textarea id="r${i}" data-k="${esc(c.k)}">${esc(state.rules[c.k]||"")}</textarea></label>`).join("");
+  const grid=list=>list.map(c=>`<label><span><i style="display:inline-block;width:9px;height:9px;border-radius:2px;background:${c.c};margin-right:6px"></i>${esc(c.k)}${isExcl(c.k)?' <span class="ov">(fora dos totais)</span>':''}</span><textarea data-k="${esc(c.k)}">${esc(state.rules[c.k]||"")}</textarea></label>`).join("");
+  $("rulegrid").innerHTML=grid(cats().filter(c=>!c.biz && c.role!=="other"));
+  $("bizRulegrid").innerHTML=grid(cats().filter(c=>c.biz && c.role!=="bizOther"));
+  $("bizStart").value=state.bizStart||"";
 }
 let toastTimer;
 function toast(msg,actionLabel,action){
@@ -1216,6 +1367,7 @@ $("period").onchange=e=>{ period=e.target.value; showN=60; render(); };
 $("q").oninput=()=>{ showN=60; render(); };
 $("fCat").onchange=e=>{ catFilter=e.target.value; showN=60; render(); };
 $("fSrc").onchange=()=>{ showN=60; render(); };
+$("fScope").onchange=()=>{ showN=60; render(); };
 $("more").onclick=()=>{ showN+=100; render(); };
 let splitOf=null;
 function openSplit(id){
@@ -1233,7 +1385,7 @@ function addPart(desc, amt, cat){
   const row=document.createElement("div"); row.className="sprow";
   row.innerHTML=`<input class="spdesc" type="text" maxlength="120" autocomplete="off" aria-label="Descrição">
     <input class="spamt" type="text" inputmode="decimal" placeholder="resto" autocomplete="off" aria-label="Valor">
-    <select class="spcat" aria-label="Categoria"><option value="">Automática</option>${cats().map(c=>`<option>${esc(c.k)}</option>`).join("")}</select>
+    <select class="spcat" aria-label="Categoria"><option value="">Automática</option>${catOptions()}</select>
     <button type="button" class="rowdel" title="Tirar esta parte" aria-label="Tirar esta parte">✕</button>`;
   row.querySelector(".spdesc").value=desc;
   row.querySelector(".spamt").value= amt===""?"":String(amt).replace(".",",");
@@ -1268,7 +1420,7 @@ $("splitForm").onsubmit=async e=>{
   if(Math.abs(round2(vals.reduce((a,v)=>a+v,0))-total)>0.005){ $("spErr").textContent=`As partes somam ${fmt(vals.reduce((a,v)=>a+v,0))}, mas o movimento é de ${fmt(total)}.`; return; }
   // categorias das partes vêm do formulário; comentários ficam nas partes que continuam a existir
   for(const k in state.overrides) if(k.startsWith(t.id+"~")) delete state.overrides[k];
-  for(const k in (state.notes||{})) if(k.startsWith(t.id+"~") && +k.split("~").pop()>=parts.length) delete state.notes[k];
+  for(const m of [state.notes||{}, state.scope||{}]) for(const k in m) if(k.startsWith(t.id+"~") && +k.split("~").pop()>=parts.length) delete m[k];
   (state.splits ||= {})[t.id]=parts.map((p,i)=>({desc:p.desc&&p.desc!==t.desc?p.desc:"", amount:round2(sign*vals[i])}));
   parts.forEach((p,i)=>{ if(p.cat) state.overrides[t.id+"~"+i]=p.cat; });
   await save(); $("splitDlg").close(); render(); toast(`Movimento dividido em ${parts.length} partes.`);
@@ -1276,12 +1428,14 @@ $("splitForm").onsubmit=async e=>{
 /* Movimentos à mão: entram como os importados (contam nos totais, nas regras e nas cópias). Uma categoria
    escolhida aqui fica como escolha manual; "Automática" deixa as regras decidir. */
 $("addBtn").onclick=()=>{
-  const n=new Date();
-  $("aDate").value=iso(n.getFullYear(),n.getMonth()+1,n.getDate()); $("aAmt").value=""; $("aDesc").value=""; $("aNote").value=""; $("aErr").textContent="";
-  $("aCat").innerHTML=`<option value="">Automática (pelas regras)</option>`+cats().map(c=>`<option>${esc(c.k)}</option>`).join("");
+  $("aDate").value=today(); $("aAmt").value=""; $("aDesc").value=""; $("aNote").value=""; $("aErr").textContent="";
+  $("aScope").value= view==="negocio" ? "biz" : ""; fillAddCats();
   $("aSrc").value=$("fSrc").value||"ca";
   $("addDlg").showModal(); $("aDesc").focus();
 };
+// as categorias à escolha são as do âmbito escolhido
+function fillAddCats(){ $("aCat").innerHTML=`<option value="">Automática (pelas regras)</option>`+catOptions($("aScope").value||undefined); }
+$("aScope").onchange=fillAddCats;
 $("aCancel").onclick=()=>$("addDlg").close();
 $("addForm").onsubmit=async e=>{
   e.preventDefault();
@@ -1291,6 +1445,7 @@ $("addForm").onsubmit=async e=>{
   const t={date, amount:round2(v*+$("aKind").value), desc, source:$("aSrc").value, manual:true, id:"man|"+Date.now().toString(36)+Math.random().toString(36).slice(2,7)};
   mergeTx([t]);
   if($("aCat").value) state.overrides[t.id]=$("aCat").value;
+  if($("aScope").value) setScope(t, $("aScope").value);
   const note=$("aNote").value.replace(/\s+/g," ").trim(); if(note) (state.notes ||= {})[t.id]=note;
   await save(); $("addDlg").close();
   if(period!=="all") period=ym(date);
@@ -1324,8 +1479,15 @@ $("copyCfPrompt").onclick=async()=>{
   catch(_){ const r=document.createRange(); r.selectNodeContents(el); const sel=getSelection(); sel.removeAllRanges(); sel.addRange(r); toast("Texto selecionado. Copia com ⌘C."); }
 };
 $("loadSample").onclick=async()=>{ state.tx=sampleData(); state.sample=true; await save(); period=latestMonth(); render(); };
-$("clearSample").onclick=async()=>{ state.tx=[]; state.overrides={}; state.sample=false; await save(); period="all"; render(); toast("Exemplo removido."); };
+$("clearSample").onclick=async()=>{ state.tx=[]; state.overrides={}; state.scope={}; state.sample=false; await save(); period="all"; render(); toast("Exemplo removido."); };
 $("saveRules").onclick=async()=>{ document.querySelectorAll("#rulegrid textarea").forEach(t=>state.rules[t.dataset.k]=t.value); await save(); render(); toast("Regras guardadas e aplicadas."); };
+$("saveBizRules").onclick=async()=>{ document.querySelectorAll("#bizRulegrid textarea").forEach(t=>state.rules[t.dataset.k]=t.value); await save(); render(); toast("Regras do negócio guardadas e aplicadas."); };
+$("bizStartForm").onsubmit=async e=>{
+  e.preventDefault();
+  const d=parseDate($("bizStart").value); if(!d){ toast("Escolhe uma data."); return; }
+  state.bizStart=d; state.bizStartAt=Date.now(); await save(); render();
+  toast(`Início de atividade: ${d.split("-").reverse().join("/")}.`);
+};
 $("resetRules").onclick=async()=>{ const d=defaultRules(); state.rules=Object.fromEntries(cats().map(c=>[c.k, c.orig?d[c.orig]||"":""])); state.mine=[]; state.rulesV=RULES_V; await save(); renderRules(); render(); toast("Regras repostas."); };
 [["fileCA","dropCA","ca"],["fileCF","dropCF","cf"]].forEach(([fi,dz,src])=>{
   $(fi).onchange=e=>{ importFiles([...e.target.files],src); e.target.value=""; };

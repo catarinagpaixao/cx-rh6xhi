@@ -41,7 +41,17 @@ Na app da Dock, clicar nas caixas de importação não abre a janela para escolh
 - **Categorias:** na secção **Categorias** (em baixo) podes criar categorias novas e mudar o nome de qualquer uma; as regras e as categorias escolhidas à mão acompanham o nome novo. Só as categorias que criaste podem ser apagadas.
 - **Apagar:** o ✕ de cada linha apaga esse movimento. **Importações** (em baixo) lista cada importação com um botão para a apagar. **Apagar estes movimentos** apaga tudo o que a tabela está a mostrar com os filtros atuais; com "Todos os meses" e sem filtros, apaga todos os movimentos e mantém a conta e as regras.
 
-## 5. Passar dados entre o Mac e o iPhone
+## 5. Negócio (trabalho independente)
+
+A conta é a mesma para o pessoal e para o negócio, por isso cada movimento tem um **âmbito**: Pessoal ou Negócio.
+
+- No topo, **Pessoal | Negócio** muda de vista. O painel pessoal não conta as despesas nem as entradas do negócio, que aparecem num resumo à parte (o quadrado "Negócio").
+- Na tabela, o botão **Pessoal / Negócio** de cada linha muda o âmbito desse movimento. Escolher uma categoria do negócio (Domínios, Alojamento, Software…) também o passa para o negócio, e vice-versa.
+- **Regras do negócio** (na vista Negócio): palavras-chave que marcam sozinhas um movimento como negócio, por exemplo `hostinger` ou `namecheap`.
+- **Início de atividade** (na vista Negócio): antes desta data tudo é pessoal, mesmo que bata com uma regra do negócio. Ao atualizar a app, fica a data desse dia, e os movimentos que já existiam continuam pessoais.
+- Uma despesa usada nas duas coisas divide-se com a tesoura; cada parte tem o seu âmbito.
+
+## 6. Passar dados entre o Mac e o iPhone
 
 1. No Mac: secção **Cópia de segurança** → **Exportar cópia**. Sai um ficheiro `.json` cifrado com a tua password.
 2. Envia-o para o iPhone por AirDrop ou iCloud Drive.
