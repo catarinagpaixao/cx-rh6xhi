@@ -151,6 +151,13 @@ dialog.wide{width:min(560px,calc(100% - 32px))}
 .plist{display:flex;flex-direction:column}
 .prow{display:grid;grid-template-columns:minmax(0,1fr) 170px 110px 90px;gap:10px;align-items:center;padding:9px 0;border-top:1px solid var(--line);font-size:.88rem}
 .prow:first-child{border-top:0} .prow small{display:block;color:var(--muted)} .prow select{padding:3px 6px;font-size:.82rem} .prow .num{text-align:right}
+.drop.rc{--src:var(--biz)}
+.rrow{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1.5fr) 100px 100px 110px 104px;gap:10px;align-items:center;padding:9px 0;border-top:1px solid var(--line);font-size:.88rem}
+.rrow:first-child{border-top:0} .rrow small{display:block;color:var(--muted);overflow-wrap:anywhere} .rrow .num{text-align:right} .rrow.void{opacity:.55}
+.rhead{font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;font-weight:600;padding-top:0}
+@media (max-width:600px){ .rrow{grid-template-columns:minmax(0,1fr) auto} .rrow .rb,.rrow .rr{display:none} .rrow .rs{grid-column:2;grid-row:1;text-align:right} .rhead{display:none} }
+.miss{border-color:var(--accent-2)!important;background:color-mix(in srgb,var(--accent-2) 8%,var(--surface))!important}
+.rcout{display:block;padding:8px 0;font-size:1rem}
 @media (max-width:600px){ .prow{grid-template-columns:minmax(0,1fr) auto} .prow select{grid-column:1} .prow .pd{grid-column:2;grid-row:1} }
 
 .grid2{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:22px}
@@ -349,7 +356,7 @@ dialog p{margin:0;color:var(--muted);font-size:.9rem}
   </div>
 
   <div class="view" data-view="negocio" hidden>
-  <nav class="tabs" id="bizNav" aria-label="Negócio"><a href="#negocio" data-s="painel">Painel</a><a href="#negocio/clientes" data-s="clientes">Clientes</a><a href="#negocio/projetos" data-s="projetos">Projetos</a></nav>
+  <nav class="tabs" id="bizNav" aria-label="Negócio"><a href="#negocio" data-s="painel">Painel</a><a href="#negocio/clientes" data-s="clientes">Clientes</a><a href="#negocio/projetos" data-s="projetos">Projetos</a><a href="#negocio/recibos" data-s="recibos">Recibos</a></nav>
   <div class="subview" data-sub="painel">
   <section class="kpis" id="bizKpis"></section>
   <section class="panel">
@@ -400,6 +407,28 @@ dialog p{margin:0;color:var(--muted);font-size:.9rem}
     </div>
     <div class="board" id="pjBoard"></div>
     <div class="plist" id="pjList"></div>
+  </section>
+  </div>
+
+  <div class="subview" data-sub="recibos" hidden>
+  <section class="imports">
+    <label class="drop rc" id="dropRC">
+      <span class="dot">€</span>
+      <span class="t-desk"><b>Arrasta para aqui o PDF do recibo verde</b><small>Fatura-recibo descarregada do Portal das Finanças · ou copia (⌘C) e cola (⌘V)</small></span>
+      <span class="t-touch"><b>Importar recibo verde</b><small>Toca para escolher o PDF descarregado do Portal das Finanças</small></span>
+      <input type="file" id="fileRC" accept=".pdf,application/pdf" multiple>
+    </label>
+  </section>
+  <section class="kpis" id="rcKpis"></section>
+  <section class="panel">
+    <div class="panel-h"><h2>Recibos verdes</h2><span class="label num" id="rcCount"></span></div>
+    <div class="filters">
+      <input type="search" id="rcQ" placeholder="Procurar número, cliente ou descrição…" aria-label="Procurar recibos">
+      <select id="rcYear" aria-label="Ano"></select>
+      <select id="rcSt" aria-label="Estado"><option value="">Todos os estados</option><option value="pending">Por receber</option><option value="paid">Recebidos</option><option value="void">Anulados</option></select>
+      <button type="button" id="newReceipt">Adicionar à mão</button>
+    </div>
+    <div class="plist" id="rcList"></div>
   </section>
   </div>
   </div>
@@ -519,6 +548,29 @@ dialog p{margin:0;color:var(--muted);font-size:.9rem}
   <label class="field"><span>Notas</span><textarea id="pjNotes" rows="3" maxlength="2000"></textarea></label>
   <div class="err" id="pjErr"></div>
   <div class="filters" style="justify-content:space-between"><button type="button" class="danger" id="pjDel">Apagar</button><span style="display:flex;gap:8px;margin-left:auto"><button type="button" id="pjCancel">Cancelar</button><button class="primary" type="submit">Guardar</button></span></div>
+</form></dialog>
+<dialog id="rcDlg" class="wide"><form method="dialog" id="rcForm" novalidate>
+  <h2 id="rcTitle">Recibo verde</h2>
+  <p class="hint" id="rcFile" style="margin:0"></p>
+  <p class="warn" id="rcWarn" style="margin:0" hidden></p>
+  <div class="addgrid">
+    <label class="field"><span>Documento</span><select id="rcType"><option value="FR">Fatura-recibo</option><option value="F">Fatura</option></select></label>
+    <label class="field"><span>Número</span><input type="text" id="rcNum" maxlength="60" autocomplete="off" placeholder="FR ATSIRE01FR/1"></label>
+    <label class="field"><span>Data de emissão</span><input type="date" id="rcDate"></label>
+    <label class="field"><span>Estado</span><select id="rcStatus"><option value="pending">Por receber</option><option value="paid">Recebido</option><option value="void">Anulado</option></select></label>
+    <label class="field wide" id="rcPaidWrap"><span>Data de recebimento</span><input type="date" id="rcPaid"></label>
+    <label class="field wide"><span>Cliente</span><select id="rcCli"></select></label>
+    <p class="hint wide" id="rcCliHint" style="margin:0"></p>
+    <label class="field wide"><span>Projeto (opcional)</span><select id="rcProj"></select></label>
+    <label class="field wide"><span>Descrição</span><input type="text" id="rcDesc" maxlength="200" autocomplete="off"></label>
+    <label class="field"><span>Valor base (€)</span><input type="text" id="rcBase" inputmode="decimal" autocomplete="off"></label>
+    <label class="field"><span>IVA (€)</span><input type="text" id="rcIva" inputmode="decimal" autocomplete="off" placeholder="0,00"></label>
+    <label class="field"><span>Retenção na fonte (€)</span><input type="text" id="rcRet" inputmode="decimal" autocomplete="off" placeholder="0,00"></label>
+    <div class="field"><span>Total do documento</span><output class="num rcout" id="rcTotal"></output></div>
+  </div>
+  <p class="help" id="rcSum" style="margin:0"></p>
+  <div class="err" id="rcErr"></div>
+  <div class="filters" style="justify-content:space-between"><button type="button" class="danger" id="rcDel">Apagar</button><span style="display:flex;gap:8px;margin-left:auto"><button type="button" id="rcCancel">Cancelar</button><button class="primary" type="submit">Guardar</button></span></div>
 </form></dialog>
 <div class="toast" id="toast" hidden></div>
 
@@ -653,7 +705,7 @@ $("forgot").onclick = async ()=>{
 function lock(msg){
   if(!session) return;
   session=null; state=null;
-  $("rows").innerHTML=""; $("kpis").innerHTML=""; $("cats").innerHTML=""; $("chart").innerHTML=""; $("bizKpis").innerHTML=""; $("bizCats").innerHTML=""; $("clList").innerHTML=""; $("pjBoard").innerHTML=""; $("pjList").innerHTML=""; $("pjKpis").innerHTML="";
+  $("rows").innerHTML=""; $("kpis").innerHTML=""; $("cats").innerHTML=""; $("chart").innerHTML=""; $("bizKpis").innerHTML=""; $("bizCats").innerHTML=""; $("clList").innerHTML=""; $("pjBoard").innerHTML=""; $("pjList").innerHTML=""; $("pjKpis").innerHTML=""; $("rcList").innerHTML=""; $("rcKpis").innerHTML="";
   mode="login"; setupGate();
   if(msg) $("authErr").textContent = msg;
 }
@@ -752,6 +804,7 @@ function upgradeBiz(){
   }
   if(!state.bizStart){ state.bizStart=today(); changed=true; }
   if(!state.biz){ state.biz={clients:[], projects:[], gone:{}}; changed=true; }
+  if(!state.biz.receipts){ state.biz.receipts=[]; changed=true; }
   return changed;
 }
 /* Palavras-chave acrescentadas depois da primeira versão. Contas antigas recebem-nas uma vez,
@@ -946,6 +999,7 @@ function loadPdfJs(){
     document.head.appendChild(s);
   });
 }
+// Linhas de texto do PDF, de cima para baixo; cada linha guarda também os pedaços de texto com a posição (x, largura).
 async function pdfLines(file){
   const lib=await loadPdfJs();
   let doc;
@@ -959,10 +1013,10 @@ async function pdfLines(file){
         if(!it.str || !it.str.trim()) continue;
         const x=it.transform[4], y=it.transform[5];
         let r=rows.find(r=>Math.abs(r.y-y)<2.5); if(!r) rows.push(r={y,items:[]});
-        r.items.push({x,s:it.str});
+        r.items.push({x,w:it.width||0,s:it.str});
       }
       rows.sort((a,b)=>b.y-a.y);
-      for(const r of rows) lines.push({page:p, y:r.y, text:r.items.sort((a,b)=>a.x-b.x).map(i=>i.s).join(" ").replace(/\s+/g," ").trim()});
+      for(const r of rows){ r.items.sort((a,b)=>a.x-b.x); lines.push({page:p, y:r.y, items:r.items, text:r.items.map(i=>i.s).join(" ").replace(/\s+/g," ").trim()}); }
     }
   } finally { doc.destroy(); }
   return lines;
@@ -989,7 +1043,7 @@ function caStatementToTx(lines){
   }
   if(!out.length) throw new Error("não encontrei movimentos. É o Extracto Integrado do Crédito Agrícola?");
   if(bad || (closing!==null && Math.abs(closing-bal)>0.005)) throw new Error("os saldos do extrato não batem certo com os movimentos lidos, por isso não importei nada.");
-  return out.map(({page,y,...t})=>t);
+  return out.map(({page,y,items,...t})=>t);
 }
 
 /* Exportação CSV da Coverflex, pedida ao assistente da Coverflex. O formato varia de pedido para pedido
@@ -1066,11 +1120,13 @@ function mergeTx(fresh){
   return {added,dup};
 }
 async function importFiles(files, source){
-  const fresh=[], errs=[], imp=Date.now().toString(36); let fixed=0;
+  const fresh=[], errs=[], imp=Date.now().toString(36), receipts=[]; let fixed=0;
   for(const f of files){
     try{
       if(/\.pdf$/i.test(f.name) || f.type==="application/pdf"){
-        fresh.push(...assignIds(caStatementToTx(await pdfLines(f))));
+        const lines=await pdfLines(f);
+        if(isReceiptPdf(lines)){ receipts.push({file:f, lines}); continue; }
+        fresh.push(...assignIds(caStatementToTx(lines)));
         continue;
       }
       const rows=await readFile(f);
@@ -1101,6 +1157,7 @@ async function importFiles(files, source){
     if(added) period=latestMonth();
     render(); msg=`${added} movimentos importados`+(dup?`, ${dup} já existiam`:"")+"."+(fixed?` ${fixed===1?"1 valor da Coverflex corrigido":fixed+" valores da Coverflex corrigidos"} com os movimentos que faltavam.`:"");
   }
+  if(receipts.length){ if(msg||errs.length) toast((msg+" "+errs.join(" ")).trim()); await importReceipts(receipts); return; }
   toast((msg+" "+errs.join(" ")).trim() || "Nada importado.");
 }
 
@@ -1172,7 +1229,7 @@ function startApp(){
 }
 /* Duas vistas, Pessoal e Negócio, escolhidas pelo endereço (#pessoal, #negocio, #negocio/clientes…) para
    o "voltar" funcionar. A tabela de movimentos é a mesma: muda de sítio e de filtro de âmbito. */
-const BIZ_SUBS=["painel","clientes","projetos"];
+const BIZ_SUBS=["painel","clientes","projetos","recibos"];
 function setView(h){
   const [v,s]=String(h||"").split("/");
   view= v==="negocio" ? "negocio" : "pessoal";
@@ -1228,7 +1285,7 @@ function render(){
     ["Início de atividade", state.bizStart.split("-").reverse().join("/"), "antes desta data, tudo é pessoal"]
   ].map(kpiHtml).join("");
   renderChart(pt,months); renderCats(pcur,pt,months,"cats","catPeriod"); renderCats(bcur,bt,months,"bizCats","bizCatPeriod");
-  renderDonut(pcur); renderTop5(pcur); renderTable(cur); renderClients(); renderProjects();
+  renderDonut(pcur); renderTop5(pcur); renderTable(cur); renderClients(); renderProjects(); renderReceipts();
 }
 function niceStep(max){ const raw=max/3, p=Math.pow(10,Math.floor(Math.log10(raw||1))), n=raw/p; return (n<=1?1:n<=2?2:n<=2.5?2.5:n<=5?5:10)*p; }
 function renderChart(tx,months){
@@ -1492,7 +1549,7 @@ function mergeBiz(theirs){
   if(!theirs) return;
   const b=biz(), gone=b.gone;
   for(const [id,at] of Object.entries(theirs.gone||{})) gone[id]=Math.max(gone[id]||0, at);
-  for(const list of ["clients","projects"]){
+  for(const list of ["clients","projects","receipts"]){
     const m=new Map(b[list].map(r=>[r.id,r]));
     for(const r of theirs[list]||[]){ const a=m.get(r.id); if(!a || (r.at||0)>(a.at||0)) m.set(r.id,r); }
     b[list]=[...m.values()].filter(r=>!(gone[r.id]>=(r.at||0)));
@@ -1517,13 +1574,14 @@ function renderClients(){
   $("clList").innerHTML= list.length ? list.map(c=>{
     const ps=b.projects.filter(p=>p.clientId===c.id).sort(byRecent);
     const agreed=ps.filter(p=>p.status!=="cancelado").reduce((s,p)=>s+(p.value||0),0);
+    const billed=b.receipts.filter(r=>r.clientId===c.id && r.status!=="void").reduce((s,r)=>s+r.base,0);
     const contact=[c.nif&&"NIF "+c.nif, c.email, c.phone].filter(Boolean).map(esc).join(" · ");
     return `<div class="card">
       <div class="card-h"><b>${esc(c.name)}</b><span class="tag">${c.kind==="empresa"?"Empresa":"Particular"}</span></div>
       <small>${contact||"Sem NIF nem contactos"}</small>
       ${c.notes?`<p class="cnote">${esc(c.notes)}</p>`:""}
       <ul class="mini">${ps.map(p=>`<li><button type="button" class="lnk" data-p="${p.id}">${esc(p.name)}</button><span class="r">${stChip(p.status)}<span class="num">${p.value?fmt(p.value):""}</span></span></li>`).join("") || `<li class="muted">Sem projetos.</li>`}</ul>
-      <div class="card-f"><span class="num muted">${agreed?`Acordado: ${fmt(agreed)}`:""}</span><span style="display:flex;gap:6px"><button type="button" data-edit="${c.id}">Editar</button><button type="button" data-newp="${c.id}">+ Projeto</button></span></div>
+      <div class="card-f"><span class="num muted">${[agreed&&`Acordado: ${fmt(agreed)}`, billed&&`Faturado: ${fmt(billed)}`].filter(Boolean).join(" · ")}</span><span style="display:flex;gap:6px"><button type="button" data-edit="${c.id}">Editar</button><button type="button" data-newp="${c.id}">+ Projeto</button></span></div>
     </div>`; }).join("")
     : `<p class="empty" style="grid-column:1/-1">${b.clients.length?"Nenhum cliente corresponde à pesquisa.":"Ainda não tens clientes. Cria o primeiro em Novo cliente."}</p>`;
 }
@@ -1538,12 +1596,12 @@ $("clQ").oninput=renderClients;
 let editingClient=null, afterClient=null, kindTouched=false;
 const KIND_HINT={particular:"Particular: não retém IRS na fonte quando te paga.", empresa:"Empresa: em regra, retém IRS na fonte quando te paga. O recibo verde mostra o valor retido."};
 function kindHint(){ $("clKindHint").textContent=KIND_HINT[$("clKind").value]; }
-function openClient(id, after=null){
-  const c=id ? clientById(id) : null; editingClient=c; afterClient=after; kindTouched=!!c;
-  $("clTitle").textContent= c ? "Editar cliente" : "Novo cliente";
+function openClient(id, after=null, pre=null){
+  const c=id ? clientById(id) : pre; editingClient=id ? c : null; afterClient=after; kindTouched=!!id;
+  $("clTitle").textContent= editingClient ? "Editar cliente" : "Novo cliente";
   $("clName").value=c?.name||""; $("clKind").value=c?.kind||"particular"; $("clNif").value=c?.nif||"";
   $("clEmail").value=c?.email||""; $("clPhone").value=c?.phone||""; $("clAlias").value=c?.aliases||""; $("clNotes").value=c?.notes||"";
-  $("clDel").hidden=!c; $("clErr").textContent=""; kindHint();
+  $("clDel").hidden=!editingClient; $("clErr").textContent=""; kindHint();
   $("clDlg").showModal(); $("clName").focus();
 }
 $("clKind").onchange=()=>{ kindTouched=true; kindHint(); };
@@ -1566,7 +1624,8 @@ $("clForm").onsubmit=async e=>{
   if(afterClient){ const f=afterClient; afterClient=null; f(c); }
 };
 $("clDel").onclick=async()=>{
-  const c=editingClient, n=biz().projects.filter(p=>p.clientId===c.id).length;
+  const c=editingClient, n=biz().projects.filter(p=>p.clientId===c.id).length, nr=biz().receipts.filter(r=>r.clientId===c.id).length;
+  if(nr){ $("clErr").textContent=`Este cliente tem ${nr} recibo${nr>1?"s":""} verde${nr>1?"s":""}, por isso não pode ser apagado.`; return; }
   if(n){ $("clErr").textContent=`Este cliente tem ${n} projeto${n>1?"s":""}. Apaga-${n>1?"os":"o"} ou passa-${n>1?"os":"o"} para outro cliente primeiro.`; return; }
   $("clDlg").close();
   if(!await ask({title:`Apagar “${c.name}”?`, text:"Não dá para desfazer.", ok:"Apagar", danger:true})) return;
@@ -1669,9 +1728,230 @@ $("pjForm").onsubmit=async e=>{
   await save(); $("pjDlg").close(); render(); toast(editingProj?"Projeto guardado.":`Projeto “${name}” criado.`);
 };
 $("pjDel").onclick=async()=>{
-  const p=editingProj; $("pjDlg").close();
-  if(!await ask({title:`Apagar “${p.name}”?`, text:"Não dá para desfazer.", ok:"Apagar", danger:true})) return;
+  const p=editingProj, nr=biz().receipts.filter(r=>r.projectId===p.id).length; $("pjDlg").close();
+  if(!await ask({title:`Apagar “${p.name}”?`, text:(nr?`${nr===1?"O recibo associado fica":`Os ${nr} recibos associados ficam`} só com o cliente. `:"")+"Não dá para desfazer.", ok:"Apagar", danger:true})) return;
+  for(const r of biz().receipts) if(r.projectId===p.id){ r.projectId=""; r.at=Date.now(); }
   forget("projects", p.id); await save(); render(); toast("Projeto apagado.");
+};
+
+/* ---------- recibos verdes ---------- */
+/* Só se registam aqui: são emitidos no Portal das Finanças. total = base + IVA; a receber = total − retenção na fonte.
+   O PDF é lido pelos rótulos (Valor base, IVA, Retenção na fonte, Importância recebida…), com o valor à direita do
+   rótulo ou na mesma coluna nas linhas de baixo. O que não for encontrado fica assinalado no formulário. */
+const RC_AMT=/(?<![\d.,])(?:(?:\d{1,3}(?:\.\d{3})+|\d+),\d{2}|\d+\.\d{2})(?![\d.,])/g;
+function amounts(str){
+  const out=[];
+  for(const m of String(str).matchAll(RC_AMT)) if(!/^\s*%/.test(str.slice(m.index+m[0].length))) out.push(round2(parseNumber(m[0])));
+  return out;
+}
+const RC_LABELS={
+  base:[/valor\s*base/i, /base\s*tribut[aá]vel/i, /valor\s*tribut[aá]vel/i, /\bincid[eê]ncia\b/i],
+  iva:[/valor\s*(?:do\s*)?iva/i, /\biva\b(?![^\d]*(?:regime|isen|art))/i],
+  ret:[/reten[cç][aã]o/i, /\birs\b/i],
+  paid:[/import[aâ]ncia\s*recebida/i, /valor\s*recebido/i, /valor\s*a\s*receber/i, /\btotal\b/i]
+};
+const RC_ANY=new RegExp(Object.values(RC_LABELS).flat().map(r=>r.source).join("|"),"i");
+function labelAmount(lines, res){
+  for(const re of res) for(let r=0;r<lines.length;r++){
+    const L=lines[r];
+    for(let i=0;i<L.items.length;i++){
+      const it=L.items[i], m=it.s.match(re); if(!m) continue;
+      let a=amounts(it.s.slice(m.index+m[0].length)); if(a.length) return a[0];
+      for(const j of L.items.slice(i+1)){ a=amounts(j.s); if(a.length) return a[0]; if(RC_ANY.test(j.s)) break; }
+      if(it.s.trim().length>45) continue; // uma frase, não um rótulo de coluna
+      // tabela: o valor está numa das linhas de baixo, na mesma coluna
+      const l0=it.x, l1=it.x+Math.max(it.w,20);
+      for(const B of lines.slice(r+1,r+4)){
+        if(B.page!==L.page) break;
+        let best=null, dist=Infinity;
+        for(const j of B.items){ const v=amounts(j.s); if(!v.length) continue; const d=Math.max(0, j.x-l1, l0-(j.x+Math.max(j.w,20))); if(d<dist){ dist=d; best=v[0]; } }
+        if(best!==null && dist<40) return best;
+      }
+    }
+  }
+  return null;
+}
+function isReceiptPdf(lines){
+  const t=lines.map(l=>l.text).join("\n");
+  return !CA_SALDO.test(t) && (/ATSIRE/i.test(t) || /fatura[\s-]*recibo|recibo\s+verde/i.test(t) || (/\b(fatura|recibo)\b/i.test(t) && /adquirente/i.test(t)));
+}
+function parseReceipt(lines){
+  const text=lines.map(l=>l.text).join("\n"), miss=[];
+  // o tipo é o do título: a primeira destas palavras no documento ("Referente à fatura…" num recibo não conta)
+  const at=re=>{ const i=text.search(re); return i<0 ? Infinity : i; }, pFR=at(/fatura[\s-]*recibo/i), pF=at(/\bfatura\b/i), pR=at(/\brecibo\b/i);
+  const type= pFR<Infinity && pFR<=Math.min(pF,pR) ? "FR" : pR<pF ? "R" : pF<Infinity ? "F" : "FR";
+  const nums=[...new Set([...text.matchAll(/\b(FR|FT|RG|RC|R|F)\s?(ATSIRE[0-9A-Z]*\/\d+)/gi)].map(m=>m[1].toUpperCase()+" "+m[2].toUpperCase()))];
+  let number= type==="R" ? nums.find(n=>/^R/.test(n))||"" : nums.find(n=>/^F/.test(n))||nums[0]||"";
+  if(!number){ const m=text.match(/N\.?\s*[ºo°]\s*:?\s*([A-Z]{1,3}\s?[A-Z0-9]+\/\d+)/i); if(m) number=m[1].toUpperCase(); }
+  const ref= type==="R" ? nums.find(n=>/^F/.test(n))||"" : "";
+  const D=/(\d{4})-(\d{2})-(\d{2})|(\d{2})[-\/.](\d{2})[-\/.](\d{4})/, toIso=m=>m[1]?iso(+m[1],+m[2],+m[3]):iso(+m[6],+m[5],+m[4]);
+  let date=null; const di=text.search(/data\s*(?:de\s*)?emiss[aã]o/i);
+  if(di>-1){ const m=text.slice(di).match(D); if(m) date=toIso(m); }
+  if(!date){ const m=text.match(D); if(m) date=toIso(m); }
+  // NIF do adquirente: o primeiro NIF válido depois de "Adquirente" que não seja o teu
+  const nifs=[...text.matchAll(/(?<!\d)(\d{9})(?!\d)/g)].filter(m=>!nifCheck(m[1]).err).map(m=>({n:m[1], i:m.index}));
+  const ai=text.search(/adquirente/i), mine=biz().myNif||"";
+  const emit=(nifs.find(x=>ai<0||x.i<ai)||{}).n||"";
+  const nif=(nifs.find(x=>(ai<0||x.i>ai) && x.n!==mine && x.n!==emit)||{}).n||"";
+  let name="";
+  const li=lines.findIndex(l=>/adquirente/i.test(l.text));
+  if(li>-1) for(const l of lines.slice(li, li+8)){ const m=l.text.match(/\bnome\s*:?\s*(.+)/i); if(m){ name=m[1].replace(/\b(NIF|N\.?\s?I\.?\s?F\.?|contribuinte|morada)\b.*$/i,"").trim(); break; } }
+  let desc=""; const dl=lines.findIndex(l=>/descri[cç][aã]o/i.test(l.text));
+  if(dl>-1){ const m=lines[dl].text.match(/descri[cç][aã]o\s*:?\s*(.*)/i); desc=(m&&m[1].trim()) || (lines[dl+1]&&!amounts(lines[dl+1].text).length ? lines[dl+1].text : ""); }
+  let base=labelAmount(lines,RC_LABELS.base), iva=labelAmount(lines,RC_LABELS.iva), ret=labelAmount(lines,RC_LABELS.ret), paid=labelAmount(lines,RC_LABELS.paid);
+  let warn="";
+  if(iva===null){ iva=0; miss.push("iva"); }
+  if(base===null && paid!==null && ret!==null){ base=round2(paid+ret-iva); miss.push("base"); }
+  if(ret===null){ if(base!==null && paid!==null && round2(base+iva-paid)>=0){ ret=round2(base+iva-paid); } else ret=0; miss.push("ret"); }
+  if(base===null) miss.push("base");
+  // a importância recebida tem de ser o total (base + IVA) ou o total menos a retenção
+  if(base!==null && paid!==null && Math.abs(paid-round2(base+iva-ret))>0.01 && Math.abs(paid-round2(base+iva))>0.01)
+    warn=`Os valores lidos não batem certo: base ${fmt(base)} + IVA ${fmt(iva)} − retenção ${fmt(ret)} não dá a importância de ${fmt(paid)} que está no PDF. Confirma-os.`;
+  if(!number) miss.push("number"); if(!date) miss.push("date"); if(!nif) miss.push("nif");
+  return {type, number, ref, date, nif, emit, name, desc, base, iva, ret, miss, warn};
+}
+async function fileHash(f){ const h=await crypto.subtle.digest("SHA-256", await f.arrayBuffer()); return [...new Uint8Array(h)].slice(0,12).map(b=>b.toString(16).padStart(2,"0")).join(""); }
+// Recebe ficheiros, ou {file, lines} já lidos pela importação de extratos. Um formulário de confirmação por recibo.
+async function importReceipts(items){
+  const errs=[]; let done=0;
+  for(const it of items){
+    const f=it.file||it;
+    try{
+      if(!(/\.pdf$/i.test(f.name) || f.type==="application/pdf")) throw new Error("não é um PDF.");
+      const lines=it.lines||await pdfLines(f);
+      if(!isReceiptPdf(lines)) throw new Error(CA_SALDO.test(lines.map(l=>l.text).join("\n")) ? "é um extrato do banco: importa-o em Pessoal, na caixa CA." : "não parece um recibo verde do Portal das Finanças.");
+      const hash=await fileHash(f), dup=biz().receipts.find(r=>r.file && r.file.hash===hash);
+      if(dup) throw new Error(`já foi importado (${dup.number}).`);
+      const p=parseReceipt(lines);
+      if(p.type==="R"){ // recibo de uma fatura já registada: a fatura passa a recebida
+        const fat=p.ref && biz().receipts.find(r=>norm(r.number)===norm(p.ref));
+        if(!fat) throw new Error(p.ref ? `é o recibo da fatura ${p.ref}, que ainda não está na app. Importa primeiro a fatura.` : "é um recibo, mas não encontrei o número da fatura a que se refere.");
+        Object.assign(fat, {status:"paid", paidAt:p.date||today(), receiptNo:p.number, at:Date.now()});
+        await save(); render(); done++; continue;
+      }
+      if(!p.number && p.base===null) throw new Error("não encontrei os dados de um recibo verde.");
+      if(p.number && biz().receipts.some(r=>norm(r.number)===norm(p.number))) throw new Error(`o recibo ${p.number} já existe na app.`);
+      if(await openReceipt(null, {...p, file:{name:f.name, hash}})) done++;
+    }catch(e){ errs.push(`${f.name}: ${e.message}`); }
+  }
+  const msg=((done?`${done} recibo${done>1?"s":""} guardado${done>1?"s":""}.`:"")+" "+errs.join(" ")).trim();
+  if(msg) toast(msg);
+}
+
+const rcNet = r => round2(r.total-r.ret);
+const RC_ST={pending:["Por receber","var(--accent-2)"], paid:["Recebido","var(--pos)"], void:["Anulado","var(--muted)"]};
+const rcChip = r => `<span class="st" style="--c:${RC_ST[r.status][1]}" ${r.paidAt?`title="Recebido a ${dmy(r.paidAt)}"`:""}>${RC_ST[r.status][0]}</span>`;
+let rcYear=null;
+function renderReceipts(){
+  const b=biz(), now=today().slice(0,4), ys=[...new Set([now, ...b.receipts.map(r=>r.date.slice(0,4))])].sort().reverse();
+  const y= rcYear===null ? now : rcYear;
+  $("rcYear").innerHTML=ys.map(v=>`<option>${v}</option>`).join("")+`<option value="">Todos os anos</option>`; $("rcYear").value=y;
+  const inY=b.receipts.filter(r=>!y||r.date.startsWith(y)), live=inY.filter(r=>r.status!=="void"), pend=b.receipts.filter(r=>r.status==="pending");
+  const sum=(l,f)=>l.reduce((s,r)=>s+f(r),0), nr=n=>`${n} recibo${n===1?"":"s"}`, ivaY=sum(live,r=>r.iva), yl=y||"(todos os anos)";
+  $("rcKpis").innerHTML=[
+    [`Faturado ${yl}`, fmt(sum(live,r=>r.base)), `${nr(live.length)}, valor base`+(ivaY?` · IVA ${fmt(ivaY)}`:"")],
+    ["Por receber", fmt(sum(pend,rcNet)), pend.length? `${nr(pend.length)}, já sem a retenção` : "nada pendente"],
+    [`Retenções ${yl}`, fmt(sum(live,r=>r.ret)), "IRS já pago por retenção na fonte"],
+    [`Recebido ${yl}`, fmt(sum(live.filter(r=>r.status==="paid"),rcNet)), "o que entrou na conta"]
+  ].map(kpiHtml).join("");
+  const q=norm($("rcQ").value), st=$("rcSt").value, cn=r=>(clientById(r.clientId)||{name:"(cliente apagado)"}).name, pn=r=>(projectById(r.projectId)||{}).name||"";
+  const list=inY.filter(r=>(!st||r.status===st) && (!q||[r.number,cn(r),pn(r),r.desc].some(v=>norm(v).includes(q))))
+    .sort((a,b)=>b.date.localeCompare(a.date)||b.number.localeCompare(a.number,"pt",{numeric:true}));
+  $("rcCount").textContent=nr(list.length);
+  $("rcList").innerHTML= list.length ? `<div class="rrow rhead"><span>Número</span><span>Cliente</span><span class="num rb">Base</span><span class="num rr">Retenção</span><span class="num">A receber</span><span class="rs">Estado</span></div>`+list.map(r=>`<div class="rrow${r.status==="void"?" void":""}">
+      <div><button type="button" class="lnk" data-rc="${r.id}">${esc(r.number)}</button><small>${dmy(r.date)} · ${r.type==="F"?"Fatura":"Fatura-recibo"}</small></div>
+      <div>${esc(cn(r))}<small>${esc(pn(r)||r.desc||"")}</small></div>
+      <span class="num rb">${fmt(r.base)}</span><span class="num rr">${r.ret?fmt(r.ret):"—"}</span><span class="num">${fmt(rcNet(r))}</span><span class="rs">${rcChip(r)}</span></div>`).join("")
+    : `<p class="empty">${b.receipts.length?"Nenhum recibo corresponde aos filtros.":"Ainda não tens recibos. Arrasta para a caixa acima o PDF da fatura-recibo descarregada do Portal das Finanças."}</p>`;
+}
+$("rcList").onclick=e=>{ const b=e.target.closest("button[data-rc]"); if(b) openReceipt(b.dataset.rc); };
+$("rcQ").oninput=renderReceipts; $("rcSt").onchange=renderReceipts;
+$("rcYear").onchange=()=>{ rcYear=$("rcYear").value; renderReceipts(); };
+$("newReceipt").onclick=()=>openReceipt(null);
+$("fileRC").onchange=e=>{ const fs=[...e.target.files]; e.target.value=""; importReceipts(fs); };
+(d=>{ d.ondragover=e=>{ e.preventDefault(); d.classList.add("over"); }; d.ondragleave=()=>d.classList.remove("over");
+  d.ondrop=e=>{ e.preventDefault(); d.classList.remove("over"); importReceipts([...e.dataTransfer.files]); }; })($("dropRC"));
+
+let editingRc=null, rcParsed=null, rcDone=null, rcSaved=false;
+const RC_FIELDS={number:"rcNum", date:"rcDate", nif:"rcCli", base:"rcBase", iva:"rcIva", ret:"rcRet"};
+const money = v => v==null ? "" : v.toFixed(2).replace(".",",");
+function fillRcClients(sel){
+  $("rcCli").innerHTML=`<option value="">Escolhe o cliente…</option>`+sortedClients().map(c=>`<option value="${c.id}">${esc(c.name)}${c.nif?` · ${esc(c.nif)}`:""}</option>`).join("")+`<option value="__new">+ Novo cliente…</option>`;
+  $("rcCli").value=sel||"";
+}
+function fillRcProj(sel){
+  const ps=biz().projects.filter(p=>p.clientId===$("rcCli").value).sort(byRecent);
+  $("rcProj").innerHTML=`<option value="">Sem projeto</option>`+ps.map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join("");
+  $("rcProj").value= ps.some(p=>p.id===sel) ? sel : "";
+}
+function openReceipt(id, p=null){
+  const r=id ? biz().receipts.find(x=>x.id===id) : null; editingRc=r; rcParsed=p; rcSaved=false;
+  const v=r||p||{}, file=(r||p||{}).file;
+  $("rcTitle").textContent= r ? "Editar recibo" : p ? "Confirmar recibo importado" : "Novo recibo";
+  $("rcFile").textContent= file ? `Ficheiro: ${file.name}` : ""; $("rcFile").hidden=!file;
+  $("rcType").value=v.type||"FR"; $("rcNum").value=v.number||""; $("rcDate").value=v.date||(p?"":today());
+  $("rcStatus").value=r?.status||"pending"; $("rcPaid").value=r?.paidAt||"";
+  $("rcDesc").value=v.desc||""; $("rcBase").value=money(v.base); $("rcIva").value=v.iva?money(v.iva):""; $("rcRet").value=v.ret?money(v.ret):"";
+  const match= r ? r.clientId : p ? ((p.nif && biz().clients.find(c=>c.nif===p.nif)) || (p.name && biz().clients.find(c=>norm(c.name)===norm(p.name))) || {}).id : "";
+  fillRcClients(match); fillRcProj(r?.projectId||"");
+  Object.values(RC_FIELDS).forEach(i=>$(i).classList.remove("miss"));
+  if(p) for(const k of p.miss) if(!(k==="nif" && match)) $(RC_FIELDS[k]).classList.add("miss");
+  const notes=[p&&p.miss.length?"Confirma os campos assinalados: não os encontrei no PDF.":"", p?.warn||""].filter(Boolean).join(" ");
+  $("rcWarn").textContent=notes; $("rcWarn").hidden=!notes;
+  $("rcDel").hidden=!r; $("rcErr").textContent=""; rcUpdate();
+  $("rcDlg").showModal();
+  return new Promise(res=>rcDone=res);
+}
+$("rcDlg").onclose=()=>{ if(rcDone){ const f=rcDone; rcDone=null; f(rcSaved); } };
+function rcVals(){
+  const g=id=>{ const t=$(id).value.trim(); return t ? round2(parseNumber(t)) : 0; };
+  const base=g("rcBase"), iva=g("rcIva"), ret=g("rcRet");
+  return {base, iva, ret, total:round2(base+iva), net:round2(base+iva-ret)};
+}
+function rcUpdate(){
+  const v=rcVals(), c=clientById($("rcCli").value), p=rcParsed||{};
+  $("rcTotal").textContent= isNaN(v.total) ? "—" : fmt(v.total);
+  let sum= isNaN(v.net) ? "" : `A receber: <b class="num">${fmt(v.net)}</b> (total menos a retenção na fonte).`;
+  if(c && c.kind==="empresa" && !v.ret && v.base>0) sum+=" Este cliente é uma empresa e o recibo não tem retenção na fonte: confirma se está certo (há empresas dispensadas de reter).";
+  if(c && c.kind==="particular" && v.ret>0) sum+=" Este cliente está como particular, que não retém IRS: confirma o tipo do cliente.";
+  if($("rcStatus").value==="pending" && !editingRc) sum+=" Fica “por receber” até o pagamento aparecer no extrato; se já recebeste, muda o estado.";
+  $("rcSum").innerHTML=sum;
+  $("rcPaidWrap").hidden=$("rcStatus").value!=="paid";
+  let h= (p.nif||p.name) ? `No PDF: ${esc([p.name, p.nif&&"NIF "+p.nif].filter(Boolean).join(" · "))}. ` : "";
+  if(!c && (p.nif||p.name)) h+=`<button type="button" class="linkbtn" id="rcNewCli">Criar este cliente</button>`;
+  else if(c && p.nif && c.nif && c.nif!==p.nif) h+=`<b>Atenção:</b> o NIF do cliente escolhido é ${esc(c.nif)}.`;
+  $("rcCliHint").innerHTML=h; $("rcCliHint").hidden=!h;
+  if($("rcNewCli")) $("rcNewCli").onclick=()=>rcNewClient({name:p.name||"", nif:p.nif||"", kind:/^[569]/.test(p.nif||"")?"empresa":"particular"});
+}
+function rcNewClient(pre){
+  openClient(null, c=>{ fillRcClients(c.id); fillRcProj(""); $("rcCli").classList.remove("miss"); rcUpdate(); }, pre);
+}
+["rcBase","rcIva","rcRet","rcNum","rcDate"].forEach(i=>$(i).addEventListener("input",()=>{ $(i).classList.remove("miss"); rcUpdate(); }));
+$("rcStatus").onchange=()=>{ if($("rcStatus").value==="paid" && !$("rcPaid").value) $("rcPaid").value=today(); rcUpdate(); };
+$("rcCli").onchange=()=>{
+  if($("rcCli").value==="__new"){ $("rcCli").value=""; rcNewClient(null); return; }
+  $("rcCli").classList.remove("miss"); fillRcProj(""); rcUpdate();
+};
+$("rcCancel").onclick=()=>$("rcDlg").close();
+$("rcForm").onsubmit=async e=>{
+  e.preventDefault();
+  const v=rcVals(), number=$("rcNum").value.replace(/\s+/g," ").trim().toUpperCase(), date=parseDate($("rcDate").value), cli=$("rcCli").value, status=$("rcStatus").value, paidAt=parseDate($("rcPaid").value);
+  const err=!number?"Escreve o número do recibo.":!date?"Escolhe a data de emissão.":!clientById(cli)?"Escolhe o cliente (ou cria-o).":!(v.base>0)?"O valor base tem de ser um número maior que zero."
+    :!(v.iva>=0 && v.ret>=0)?"O IVA e a retenção têm de ser números, zero ou mais.":v.ret>v.base?"A retenção não pode ser maior do que o valor base."
+    :(status==="paid" && !paidAt)?"Escolhe a data de recebimento.":biz().receipts.some(r=>r!==editingRc && norm(r.number)===norm(number))?"Já existe um recibo com este número.":"";
+  if(err){ $("rcErr").textContent=err; return; }
+  const r=editingRc || {id:uid()};
+  Object.assign(r, {type:$("rcType").value, number, date, clientId:cli, projectId:$("rcProj").value, desc:$("rcDesc").value.replace(/\s+/g," ").trim(),
+    base:v.base, iva:v.iva, ret:v.ret, total:v.total, status, paidAt: status==="paid" ? paidAt : "", at:Date.now()});
+  if(!editingRc){ if(rcParsed?.file) r.file=rcParsed.file; biz().receipts.push(r); }
+  if(rcParsed?.emit && !biz().myNif) biz().myNif=rcParsed.emit; // o teu NIF, para não o confundir com o do cliente
+  rcSaved=true; await save(); $("rcDlg").close(); render();
+  if(!rcParsed) toast(editingRc ? "Recibo guardado." : `Recibo ${number} criado.`);
+};
+$("rcDel").onclick=async()=>{
+  const r=editingRc; $("rcDlg").close();
+  if(!await ask({title:`Apagar o recibo ${r.number}?`, text:"Sai só da app; no Portal das Finanças continua emitido. Se o anulaste lá, muda antes o estado para Anulado. Não dá para desfazer.", ok:"Apagar", danger:true})) return;
+  forget("receipts", r.id); await save(); render(); toast("Recibo apagado.");
 };
 
 /* ---------- eventos ---------- */
@@ -1813,7 +2093,8 @@ $("resetRules").onclick=async()=>{ const d=defaultRules(); state.rules=Object.fr
 document.addEventListener("paste",e=>{
   const files=[...((e.clipboardData&&e.clipboardData.files)||[])];
   if(!session || !files.length) return;
-  e.preventDefault(); importFiles(files,"ca");
+  e.preventDefault();
+  if(view==="negocio" && sub==="recibos") importReceipts(files); else importFiles(files,"ca");
 });
 
 function sampleData(){

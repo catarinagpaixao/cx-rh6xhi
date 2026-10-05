@@ -52,7 +52,10 @@ A conta é a mesma para o pessoal e para o negócio, por isso cada movimento tem
 - Uma despesa usada nas duas coisas divide-se com a tesoura; cada parte tem o seu âmbito.
 - **Clientes** (Negócio → Clientes): nome, tipo (particular ou empresa), NIF (a app confere o dígito de controlo), contactos, notas e o "nome no extrato" — como o nome aparece nas transferências do banco, para reconhecer os pagamentos. Cada cartão mostra os projetos do cliente e o total acordado.
 - **Projetos** (Negócio → Projetos): estado (contacto → proposta enviada → aceite → em desenvolvimento → entregue → manutenção, ou cancelado), valor acordado, site, entrega prevista e notas. A data de cada estado fica registada e pode ser corrigida. Vista em **Quadro** (no Mac, arrasta os cartões entre colunas) ou em **Lista**, com filtros por estado e cliente.
-- Clientes e projetos entram na cópia de segurança. Ao restaurar, fica a versão mais recente de cada um, e o que apagaste não volta.
+- **Recibos verdes** (Negócio → Recibos): a app não emite faturas, só as regista. Descarrega o PDF da fatura-recibo no Portal das Finanças e arrasta-o para a caixa (ou cola-o com ⌘V; também é reconhecido na caixa do CA). A app lê número, data, NIF e nome do cliente, descrição, valor base, IVA e retenção na fonte, e mostra um formulário para confirmar: os campos que não encontrou ficam assinalados a laranja. O cliente é reconhecido pelo NIF; se ainda não existir, há um botão para o criar com os dados do PDF. Total = base + IVA; **a receber** = total − retenção na fonte.
+  - Estado: por receber, recebido (com data) ou anulado. Se emitires uma Fatura e mais tarde o Recibo, importa os dois: o recibo marca a fatura como recebida.
+  - Em cima: faturado no ano, por receber, retenções do ano e recebido.
+- Clientes, projetos e recibos entram na cópia de segurança. Ao restaurar, fica a versão mais recente de cada um, e o que apagaste não volta.
 
 ## 6. Passar dados entre o Mac e o iPhone
 
