@@ -152,6 +152,32 @@ dialog.wide{width:min(560px,calc(100% - 32px))}
 .prow{display:grid;grid-template-columns:minmax(0,1fr) 170px 110px 90px;gap:10px;align-items:center;padding:9px 0;border-top:1px solid var(--line);font-size:.88rem}
 .prow:first-child{border-top:0} .prow small{display:block;color:var(--muted)} .prow select{padding:3px 6px;font-size:.82rem} .prow .num{text-align:right}
 .drop.rc{--src:var(--biz)}
+details.sect summary{cursor:pointer;font-weight:600;font-size:.9rem}
+.plangrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin:12px 0}
+.plangrid fieldset{border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin:0;display:flex;flex-direction:column;gap:8px}
+.plangrid legend{font-size:.78rem;color:var(--muted);padding:0 4px}
+.todo{display:grid;grid-template-columns:96px minmax(0,1fr) auto;gap:4px 12px;align-items:center;padding:9px 0;border-top:1px solid var(--line);font-size:.88rem}
+.todo:first-child{border-top:0} .todo small{display:block;color:var(--muted)} .todo .d{font-size:.8rem;color:var(--muted)}
+.todo.late .d{color:var(--neg);font-weight:600} .todo.soon .d{color:var(--accent-2);font-weight:600}
+@media (max-width:600px){ .todo{grid-template-columns:minmax(0,1fr) auto} .todo .d{grid-column:1/-1} }
+.pjhead{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap}
+.pjhead h2{font-size:1.4rem} .pjhead a,#pjPage .field a{color:var(--biz)}
+@media (max-width:520px){ #pjPage .addgrid{grid-template-columns:minmax(0,1fr)} } .pjhead .facts{display:flex;gap:6px 14px;flex-wrap:wrap;font-size:.85rem;color:var(--muted);margin-top:6px}
+.pjhead .ctl{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.back{font-size:.85rem;color:var(--muted);text-decoration:none} .back:hover{color:var(--fg)}
+.steps{display:flex;flex-direction:column;gap:12px}
+.stage h3{font-size:.8rem;margin:0 0 6px;display:flex;gap:8px;align-items:center}
+.stage label{display:flex;gap:8px;align-items:baseline;padding:3px 0;font-size:.88rem;cursor:pointer}
+.stage label input{margin:0;flex:none;width:16px;height:16px;accent-color:var(--accent);transform:translateY(2px)}
+.stage label.done span{color:var(--muted);text-decoration:line-through} .stage small{margin-left:auto;color:var(--muted);white-space:nowrap}
+details.stage>summary{cursor:pointer;list-style:none} details.stage>summary::-webkit-details-marker{display:none}
+.prog{font-size:.72rem;color:var(--muted);font-weight:400}
+.kv{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 12px;font-size:.88rem} .kv .num{text-align:right} .kv .tot{font-weight:600;border-top:1px solid var(--line);padding-top:6px}
+.alert{font-size:.85rem;padding:7px 10px;border-radius:8px;background:var(--chip)} .alert.late{background:color-mix(in srgb,var(--neg) 12%,var(--surface));color:var(--neg)} .alert.soon{background:color-mix(in srgb,var(--accent-2) 14%,var(--surface))}
+.pcard .al{font-size:.75rem;color:var(--muted)} .pcard .al.late{color:var(--neg)} .pcard .al.soon{color:var(--accent-2)}
+.chg{display:grid;grid-template-columns:92px minmax(0,1fr) 90px auto;gap:8px;align-items:center;padding:6px 0;border-top:1px solid var(--line);font-size:.86rem} .chg:first-child{border-top:0} .chg .num{text-align:right}
+.chgform{display:grid;grid-template-columns:140px minmax(0,1fr) 110px auto;gap:8px;align-items:end;margin-top:8px}
+@media (max-width:600px){ .chg{grid-template-columns:minmax(0,1fr) auto} .chg .d{grid-column:1/-1} .chgform{grid-template-columns:1fr 1fr} .chgform .w{grid-column:1/-1} }
 .badge{display:inline-block;margin-left:6px;min-width:18px;padding:0 5px;border-radius:99px;background:var(--biz);color:var(--bg);font-size:.7rem;line-height:18px;text-align:center;vertical-align:1px}
 .match{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1.2fr) auto;gap:10px 14px;align-items:center;padding:10px 0;border-top:1px solid var(--line);font-size:.88rem}
 .match:first-child{border-top:0} .match small{display:block;color:var(--muted)} .match select{width:100%;padding:5px 8px;font-size:.85rem} .match .arrow{color:var(--muted)}
@@ -362,39 +388,26 @@ dialog p{margin:0;color:var(--muted);font-size:.9rem}
   </div>
 
   <div class="view" data-view="negocio" hidden>
-  <nav class="tabs" id="bizNav" aria-label="Negócio"><a href="#negocio" data-s="painel">Painel</a><a href="#negocio/clientes" data-s="clientes">Clientes</a><a href="#negocio/projetos" data-s="projetos">Projetos</a><a href="#negocio/recibos" data-s="recibos">Recibos<span class="badge" id="rcBadge" hidden></span></a></nav>
+  <nav class="tabs" id="bizNav" aria-label="Negócio"><a href="#negocio" data-s="painel">Painel</a><a href="#negocio/clientes" data-s="clientes">Clientes</a><a href="#negocio/projetos" data-s="projetos">Projetos</a><a href="#negocio/recibos" data-s="recibos">Recibos<span class="badge" id="rcBadge" hidden></span></a><a href="#negocio/definicoes" data-s="definicoes">Definições</a></nav>
   <div class="subview" data-sub="painel">
   <section class="kpis" id="bizKpis"></section>
+  <section class="panel" id="todoPanel">
+    <div class="panel-h"><h2>A fazer</h2><span class="label num" id="todoCount"></span></div>
+    <div id="todoList"></div>
+  </section>
   <section class="panel">
     <div class="panel-h"><h2>Despesas do negócio por categoria</h2><span class="label" id="bizCatPeriod"></span></div>
     <div class="cats" id="bizCats"></div>
   </section>
   <div class="slot" id="bizTxSlot"></div>
-  <section class="panel">
-    <details class="rules">
-      <summary>Regras do negócio</summary>
-      <p class="help">As palavras-chave destas categorias marcam os movimentos como negócio automaticamente, a partir da data de início de atividade. Funcionam como as regras pessoais. Se a mesma palavra-chave estiver numa categoria pessoal e numa do negócio, ganha a pessoal: muda então o âmbito do movimento na tabela (Pessoal / Negócio) e a categoria do negócio acerta sozinha. Despesas usadas nas duas coisas dividem-se com a tesoura, e cada parte tem o seu âmbito.</p>
-      <div class="rulegrid" id="bizRulegrid"></div>
-      <div class="filters" style="margin-top:12px"><button class="primary" id="saveBizRules">Guardar regras</button><button type="button" id="newBizCat">Nova categoria do negócio</button></div>
-    </details>
-    <details class="rules">
-      <summary>Início de atividade</summary>
-      <div class="settings">
-        <p class="help" style="margin:0">Os movimentos anteriores a esta data ficam pessoais, mesmo que batam com uma regra do negócio. Os que marcares à mão como negócio contam sempre. Usa a data de início de atividade declarada nas Finanças.</p>
-        <form id="bizStartForm" autocomplete="off">
-          <label class="field"><span>Data de início</span><input type="date" id="bizStart"></label>
-          <button type="submit">Guardar</button>
-        </form>
-      </div>
-    </details>
-  </section>
   </div>
 
   <div class="subview" data-sub="clientes" hidden>
   <section class="panel">
     <div class="panel-h"><h2>Clientes</h2><span class="label num" id="clCount"></span></div>
     <div class="filters">
-      <input type="search" id="clQ" placeholder="Procurar nome, NIF ou email…" aria-label="Procurar clientes">
+      <input type="search" id="clQ" placeholder="Procurar nome, NIF, email ou setor…" aria-label="Procurar clientes">
+      <select id="clSt" aria-label="Estado do cliente"><option value="">Potenciais e clientes</option><option value="lead">Potenciais</option><option value="client">Clientes</option></select>
       <button class="primary" type="button" id="newClient">Novo cliente</button>
     </div>
     <div class="cards" id="clList"></div>
@@ -413,6 +426,57 @@ dialog p{margin:0;color:var(--muted);font-size:.9rem}
     </div>
     <div class="board" id="pjBoard"></div>
     <div class="plist" id="pjList"></div>
+  </section>
+  </div>
+
+  <div class="subview" data-sub="projeto" hidden><div class="slot" id="pjPage"></div></div>
+
+  <div class="subview" data-sub="definicoes" hidden>
+  <section class="panel">
+    <details class="rules">
+      <summary>Processo comercial</summary>
+      <p class="help">Os passos de cada fase do funil, um por linha. Aparecem como lista de verificação em cada projeto. Um passo com "follow" no nome desliga o lembrete de follow-up da proposta. Se mudares o nome de um passo, os projetos perdem a marca de feito desse passo.</p>
+      <div class="rulegrid" id="stepGrid"></div>
+      <div class="filters" style="margin-top:12px"><button class="primary" type="button" id="saveSteps">Guardar passos</button><button type="button" id="resetSteps">Repor os passos do guia</button></div>
+    </details>
+    <details class="rules">
+      <summary>Planos e condições</summary>
+      <p class="help">Valores da proposta comercial. Escolher um plano num projeto sugere o preço; os prazos e percentagens geram os lembretes e o plano de pagamentos.</p>
+      <div id="planGrid" class="plangrid"></div>
+      <div class="settings"><form id="condForm" autocomplete="off">
+        <label class="field"><span>Configuração inicial (€)</span><input type="text" inputmode="decimal" data-c="setupPrice"></label>
+        <label class="field"><span>Adjudicação (% do valor)</span><input type="text" inputmode="decimal" data-c="depositPct"></label>
+        <label class="field"><span>Follow-up da proposta (dias)</span><input type="text" inputmode="numeric" data-c="followDays"></label>
+        <label class="field"><span>Validade da proposta (dias)</span><input type="text" inputmode="numeric" data-c="validityDays"></label>
+        <label class="field"><span>Garantia após entrega (dias)</span><input type="text" inputmode="numeric" data-c="warrantyDays"></label>
+        <label class="field"><span>Alteração: mínimo (€)</span><input type="text" inputmode="decimal" data-c="changeMin"></label>
+        <label class="field"><span>Alterações: teto (% do valor)</span><input type="text" inputmode="decimal" data-c="changeCapPct"></label>
+        <label class="field"><span>Assinatura das mensagens</span><input type="text" data-c="signature" maxlength="80"></label>
+        <button class="primary" type="submit">Guardar condições</button>
+      </form></div>
+    </details>
+    <details class="rules">
+      <summary>Modelos de mensagens</summary>
+      <p class="help">Usa [Nome], [Empresa], [Projeto], [Plano], [Valor], [Adjudicação], [Mockup], [Proposta] e [Assinatura]: são preenchidos com os dados do projeto quando copias a mensagem na página do projeto.</p>
+      <div class="rulegrid" id="tplGrid"></div>
+      <div class="filters" style="margin-top:12px"><button class="primary" type="button" id="saveTpl">Guardar modelos</button><button type="button" id="resetTpl">Repor os modelos de origem</button></div>
+    </details>
+    <details class="rules">
+      <summary>Regras do negócio</summary>
+      <p class="help">As palavras-chave destas categorias marcam os movimentos como negócio automaticamente, a partir da data de início de atividade. Funcionam como as regras pessoais. Se a mesma palavra-chave estiver numa categoria pessoal e numa do negócio, ganha a pessoal: muda então o âmbito do movimento na tabela (Pessoal / Negócio) e a categoria do negócio acerta sozinha. Despesas usadas nas duas coisas dividem-se com a tesoura, e cada parte tem o seu âmbito.</p>
+      <div class="rulegrid" id="bizRulegrid"></div>
+      <div class="filters" style="margin-top:12px"><button class="primary" id="saveBizRules">Guardar regras</button><button type="button" id="newBizCat">Nova categoria do negócio</button></div>
+    </details>
+    <details class="rules">
+      <summary>Início de atividade</summary>
+      <div class="settings">
+        <p class="help" style="margin:0">Os movimentos anteriores a esta data ficam pessoais, mesmo que batam com uma regra do negócio. Os que marcares à mão como negócio contam sempre. Usa a data de início de atividade declarada nas Finanças.</p>
+        <form id="bizStartForm" autocomplete="off">
+          <label class="field"><span>Data de início</span><input type="date" id="bizStart"></label>
+          <button type="submit">Guardar</button>
+        </form>
+      </div>
+    </details>
   </section>
   </div>
 
@@ -536,12 +600,23 @@ dialog p{margin:0;color:var(--muted);font-size:.9rem}
     <label class="field"><span>Tipo</span><select id="clKind"><option value="particular">Particular</option><option value="empresa">Empresa</option></select></label>
     <label class="field"><span>NIF</span><input type="text" id="clNif" inputmode="numeric" maxlength="14" autocomplete="off" placeholder="9 dígitos"></label>
     <p class="hint wide" id="clKindHint" style="margin:0"></p>
+    <label class="field wide"><span>Pessoa de contacto</span><input type="text" id="clContact" maxlength="80" autocomplete="off" placeholder="Para o “Olá [Nome]” das mensagens"></label>
     <label class="field"><span>Email</span><input type="email" id="clEmail" maxlength="120" autocomplete="off"></label>
     <label class="field"><span>Telefone</span><input type="tel" id="clPhone" maxlength="30" autocomplete="off"></label>
     <label class="field wide"><span>Nome no extrato (opcional)</span><input type="text" id="clAlias" maxlength="200" autocomplete="off" placeholder="Ex.: J M SILVA, SILVA LDA"></label>
     <p class="hint wide" style="margin:0">Como o nome aparece nas transferências do banco, separado por vírgulas. Ajuda a reconhecer os pagamentos deste cliente no extrato.</p>
     <label class="field wide"><span>Notas</span><textarea id="clNotes" rows="3" maxlength="1000"></textarea></label>
   </div>
+  <details class="sect" id="clProsp"><summary>Prospeção</summary>
+    <div class="addgrid" style="margin-top:10px">
+      <label class="field"><span>Setor</span><input type="text" id="clSector" maxlength="80" autocomplete="off" placeholder="Ex.: restauração"></label>
+      <label class="field"><span>Site atual</span><input type="url" id="clSite" maxlength="200" autocomplete="off" placeholder="exemplo.pt"></label>
+      <label class="field wide"><span>Redes sociais</span><input type="text" id="clSocial" maxlength="300" autocomplete="off" placeholder="Instagram, Facebook…"></label>
+      <label class="field wide"><span>Google Maps e reviews</span><input type="text" id="clMaps" maxlength="300" autocomplete="off" placeholder="Ex.: 4,6 ★ com 120 reviews; fotos antigas"></label>
+      <label class="field wide"><span>Ferramentas que aparentam utilizar</span><input type="text" id="clTools" maxlength="300" autocomplete="off" placeholder="Ex.: Wix, reservas por telefone, Excel"></label>
+      <label class="field wide"><span>Problemas observados</span><textarea id="clProblems" rows="3" maxlength="2000"></textarea></label>
+    </div>
+  </details>
   <div class="err" id="clErr"></div>
   <div class="filters" style="justify-content:space-between"><button type="button" class="danger" id="clDel">Apagar</button><span style="display:flex;gap:8px;margin-left:auto"><button type="button" id="clCancel">Cancelar</button><button class="primary" type="submit">Guardar</button></span></div>
 </form></dialog>
@@ -556,7 +631,6 @@ dialog p{margin:0;color:var(--muted);font-size:.9rem}
     <label class="field"><span>Entrega prevista</span><input type="date" id="pjDue"></label>
   </div>
   <div><span class="label">Datas de cada estado</span><div class="addgrid" id="pjDates" style="margin-top:6px"></div></div>
-  <label class="field"><span>Notas</span><textarea id="pjNotes" rows="3" maxlength="2000"></textarea></label>
   <div class="err" id="pjErr"></div>
   <div class="filters" style="justify-content:space-between"><button type="button" class="danger" id="pjDel">Apagar</button><span style="display:flex;gap:8px;margin-left:auto"><button type="button" id="pjCancel">Cancelar</button><button class="primary" type="submit">Guardar</button></span></div>
 </form></dialog>
@@ -817,6 +891,8 @@ function upgradeBiz(){
   if(!state.bizStart){ state.bizStart=today(); changed=true; }
   if(!state.biz){ state.biz={clients:[], projects:[], gone:{}}; changed=true; }
   if(!state.biz.receipts){ state.biz.receipts=[]; changed=true; }
+  if(!state.biz.cfg){ state.biz.cfg=CFG_DEFAULT(); changed=true; }
+  if(state.biz.projects.some(needsNormalize)){ state.biz.projects.forEach(normalizeProject); changed=true; }
   return changed;
 }
 /* Palavras-chave acrescentadas depois da primeira versão. Contas antigas recebem-nas uma vez,
@@ -1246,16 +1322,17 @@ function startApp(){
 }
 /* Duas vistas, Pessoal e Negócio, escolhidas pelo endereço (#pessoal, #negocio, #negocio/clientes…) para
    o "voltar" funcionar. A tabela de movimentos é a mesma: muda de sítio e de filtro de âmbito. */
-const BIZ_SUBS=["painel","clientes","projetos","recibos"];
+const BIZ_SUBS=["painel","clientes","projetos","recibos","definicoes","projeto"];
+let pageId=null; // projeto aberto em #negocio/projeto/<id>
 function setView(h){
-  const [v,s]=String(h||"").split("/");
+  const [v,s,id]=String(h||"").split("/"); pageId=id||null;
   view= v==="negocio" ? "negocio" : "pessoal";
   sub= view==="negocio" && BIZ_SUBS.includes(s) ? s : "painel";
   const cur=(a,on)=>{ if(on) a.setAttribute("aria-current","page"); else a.removeAttribute("aria-current"); };
   document.querySelectorAll(".view").forEach(e=>e.hidden=e.dataset.view!==view);
   document.querySelectorAll(".subview").forEach(e=>e.hidden=e.dataset.sub!==sub);
   document.querySelectorAll(".seg a").forEach(a=>cur(a, a.dataset.v===view));
-  document.querySelectorAll("#bizNav a").forEach(a=>cur(a, a.dataset.s===sub));
+  document.querySelectorAll("#bizNav a").forEach(a=>cur(a, a.dataset.s===(sub==="projeto"?"projetos":sub)));
   $(view==="negocio"?"bizTxSlot":"txSlot").appendChild($("txPanel"));
   $("fScope").value= view==="negocio" ? "biz" : "personal";
   catFilter=""; showN=60;
@@ -1303,7 +1380,8 @@ function render(){
     ["Início de atividade", state.bizStart.split("-").reverse().join("/"), "antes desta data, tudo é pessoal"]
   ].map(kpiHtml).join("");
   renderChart(pt,months); renderCats(pcur,pt,months,"cats","catPeriod"); renderCats(bcur,bt,months,"bizCats","bizCatPeriod");
-  renderDonut(pcur); renderTop5(pcur); renderTable(cur); renderClients(); renderProjects(); renderReceipts();
+  renderDonut(pcur); renderTop5(pcur); renderTable(cur); renderClients(); renderProjects(); renderReceipts(); renderTodo();
+  if(view==="negocio" && sub==="projeto") renderProjectPage();
 }
 function niceStep(max){ const raw=max/3, p=Math.pow(10,Math.floor(Math.log10(raw||1))), n=raw/p; return (n<=1?1:n<=2?2:n<=2.5?2.5:n<=5?5:10)*p; }
 function renderChart(tx,months){
@@ -1529,6 +1607,7 @@ function renderRules(){
   $("rulegrid").innerHTML=grid(cats().filter(c=>!c.biz && c.role!=="other"));
   $("bizRulegrid").innerHTML=grid(cats().filter(c=>c.biz && c.role!=="bizOther"));
   $("bizStart").value=state.bizStart||"";
+  renderBizSettings();
 }
 let toastTimer;
 function toast(msg,actionLabel,action){
@@ -1548,11 +1627,49 @@ function toast(msg,actionLabel,action){
    ===================================================================== */
 const uid = () => Date.now().toString(36)+Math.random().toString(36).slice(2,7);
 const dmy = d => d ? d.split("-").reverse().join("/") : "";
+/* Funil do processo comercial: as 9 fases do guia agrupadas em prospeção (1–2), descoberta (3–5), proposta (6–7),
+   adjudicado (8) e desenvolvimento (9), mais entregue, manutenção e perdido. */
 const PJ_ST = [
-  ["contacto","Contacto","var(--muted)"], ["proposta","Proposta enviada","var(--accent-2)"], ["aceite","Aceite","var(--biz)"],
-  ["desenvolvimento","Em desenvolvimento","var(--accent)"], ["entregue","Entregue","var(--pos)"], ["manutencao","Manutenção","#5b9aa8"],
-  ["cancelado","Cancelado","var(--neg)"]
+  ["prospecao","Prospeção","var(--muted)"], ["descoberta","Descoberta","#5b9aa8"], ["proposta","Proposta","var(--accent-2)"],
+  ["adjudicado","Adjudicado","var(--biz)"], ["desenvolvimento","Em desenvolvimento","var(--accent)"], ["entregue","Entregue","var(--pos)"],
+  ["manutencao","Manutenção","#7c4dab"], ["perdido","Perdido","var(--neg)"]
 ];
+const WON=["adjudicado","desenvolvimento","entregue","manutencao"];
+const OLD_ST={contacto:"prospecao", aceite:"adjudicado", cancelado:"perdido"}; // estados da primeira versão
+function normalizeProject(p){
+  if(OLD_ST[p.status]) p.status=OLD_ST[p.status];
+  for(const [o,n] of Object.entries(OLD_ST)) if(p.dates && p.dates[o]){ p.dates[n] ||= p.dates[o]; delete p.dates[o]; }
+  return p;
+}
+const needsNormalize = p => !!OLD_ST[p.status] || Object.keys(p.dates||{}).some(k=>OLD_ST[k]);
+/* Definições do negócio (biz.cfg): planos e condições da proposta comercial, passos do processo e modelos de
+   mensagens. Os valores de origem vêm da proposta e do guia; todos se mudam em Negócio › Definições. */
+const STEPS_DEFAULT={
+  prospecao:"Analisar site, redes sociais, Google Maps e reviews\nMockup teaser personalizado no Canva\nPrimeira mensagem enviada",
+  descoberta:"Discovery call (1.ª reunião)\nResumo: problemas e oportunidades\nDocumento conceptual\nProtótipo navegável\nApresentação da solução (2.ª reunião)\nEnviados: visão conceptual e mockup",
+  proposta:"Proposta comercial enviada\nFollow-up\nNegociação fechada",
+  adjudicado:"Adjudicação / contrato assinado\nPagamento de adjudicação recebido",
+  desenvolvimento:"Desenvolvimento\nDeployment\nReuniões de acompanhamento",
+  entregue:"Entrega e formação\nFaturado o valor final",
+  manutencao:"", perdido:""
+};
+const TPL_DEFAULT=[
+  {k:"primeira", name:"Primeira mensagem", text:"Olá [Nome],\n\nEstive a analisar a vossa presença digital e preparei uma proposta visual rápida de como poderia evoluir o website da [Empresa].\n\nCaso tenha interesse, teria todo o gosto em mostrar-lhe numa breve reunião de 15 a 20 minutos.\n\n[Assinatura]"},
+  {k:"apresentacao", name:"Depois da apresentação", text:"Olá [Nome],\n\nAgradeço o tempo da reunião de hoje. Seguem a visão conceptual e o link para o mockup: [Mockup]\n\nNos próximos dias irei consolidar esta informação numa proposta comercial detalhada, incluindo o âmbito recomendado, prazo estimado e investimento associado.\n\n[Assinatura]"},
+  {k:"proposta", name:"Envio da proposta", text:"Olá [Nome],\n\nConforme combinado, segue a proposta comercial para o projeto [Projeto]: [Proposta]\n\nA recomendação é o plano [Plano], com um investimento de [Valor]. A proposta é válida por [Validade].\n\nFico disponível para qualquer esclarecimento.\n\n[Assinatura]"},
+  {k:"followup", name:"Follow-up da proposta", text:"Olá [Nome],\n\nVenho saber se já teve oportunidade de analisar a proposta para o projeto [Projeto]. Se fizer sentido, podemos marcar uma chamada rápida para esclarecer dúvidas ou ajustar o âmbito.\n\n[Assinatura]"},
+  {k:"fecho", name:"Fecho e adjudicação", text:"Olá [Nome],\n\nSegue o documento de adjudicação para assinatura. Para iniciar o desenvolvimento, o pagamento de adjudicação é de [Adjudicação] (num total de [Valor]).\n\n[Assinatura]"}
+];
+const CFG_DEFAULT = () => ({
+  plans:[{k:"basic",name:"Basic",price:550,weeks:"1 a 2 semanas"},{k:"business",name:"Business",price:850,weeks:"2 a 4 semanas"},{k:"enterprise",name:"Enterprise CRM",price:1100,weeks:"4 a 8 semanas"}],
+  setupPrice:180, depositPct:30, followDays:3, validityDays:30, warrantyDays:30, changeMin:30, changeCapPct:50, signature:"Catarina Paixão",
+  steps:{...STEPS_DEFAULT}, templates:TPL_DEFAULT.map(t=>({...t})), at:0
+});
+const cfg = () => biz().cfg;
+const splitLines = v => String(v||"").split("\n").map(x=>x.trim()).filter(Boolean);
+const stepsOf = st => splitLines(cfg().steps[st]);
+const stepKey = l => clean(l);
+const stepDate = (p,l) => (p.done||{})[stepKey(l)] || "";
 const stOf = s => PJ_ST.find(x=>x[0]===s) || PJ_ST[0];
 const stLabel = s => stOf(s)[1];
 const stChip = s => `<span class="st" style="--c:${stOf(s)[2]}">${stOf(s)[1]}</span>`;
@@ -1568,10 +1685,11 @@ function forget(list, id){ biz()[list]=biz()[list].filter(r=>r.id!==id); biz().g
 function mergeBiz(theirs){
   if(!theirs) return;
   const b=biz(), gone=b.gone;
+  if(theirs.cfg && (theirs.cfg.at||0)>(b.cfg.at||0)) b.cfg=theirs.cfg;
   for(const [id,at] of Object.entries(theirs.gone||{})) gone[id]=Math.max(gone[id]||0, at);
   for(const list of ["clients","projects","receipts"]){
     const m=new Map(b[list].map(r=>[r.id,r]));
-    for(const r of theirs[list]||[]){ const a=m.get(r.id); if(!a || (r.at||0)>(a.at||0)) m.set(r.id,r); }
+    for(const r of theirs[list]||[]){ if(list==="projects") normalizeProject(r); const a=m.get(r.id); if(!a || (r.at||0)>(a.at||0)) m.set(r.id,r); }
     b[list]=[...m.values()].filter(r=>!(gone[r.id]>=(r.at||0)));
   }
 }
@@ -1587,19 +1705,22 @@ function nifCheck(v){
 }
 
 /* ---------- clientes ---------- */
+// Potencial cliente até haver um projeto adjudicado (ou um recibo emitido para ele).
+const isCustomer = c => biz().receipts.some(r=>r.clientId===c.id) || biz().projects.some(p=>p.clientId===c.id && (WON.includes(p.status) || (p.dates||{}).adjudicado));
 function renderClients(){
-  const b=biz(), q=norm($("clQ").value);
-  const list=sortedClients().filter(c=>!q||[c.name,c.nif,c.email,c.aliases].some(v=>norm(v).includes(q)));
+  const b=biz(), q=norm($("clQ").value), st=$("clSt").value;
+  const list=sortedClients().filter(c=>(!st || (st==="client")===isCustomer(c)) && (!q||[c.name,c.nif,c.email,c.aliases,c.sector,c.contact].some(v=>norm(v).includes(q))));
   $("clCount").textContent=`${b.clients.length} cliente${b.clients.length===1?"":"s"}`;
   $("clList").innerHTML= list.length ? list.map(c=>{
     const ps=b.projects.filter(p=>p.clientId===c.id).sort(byRecent);
-    const agreed=ps.filter(p=>p.status!=="cancelado").reduce((s,p)=>s+(p.value||0),0);
+    const agreed=ps.filter(p=>WON.includes(p.status)).reduce((s,p)=>s+(p.value||0),0), lead=!isCustomer(c);
     const billed=b.receipts.filter(r=>r.clientId===c.id && r.status!=="void").reduce((s,r)=>s+r.base,0);
-    const contact=[c.nif&&"NIF "+c.nif, c.email, c.phone].filter(Boolean).map(esc).join(" · ");
+    const contact=[c.sector, c.contact, c.nif&&"NIF "+c.nif, c.email, c.phone].filter(Boolean).map(esc).join(" · ");
+    const note= lead && c.problems ? c.problems : c.notes;
     return `<div class="card">
-      <div class="card-h"><b>${esc(c.name)}</b><span class="tag">${c.kind==="empresa"?"Empresa":"Particular"}</span></div>
+      <div class="card-h"><b>${esc(c.name)}</b>${lead?`<span class="st" style="--c:var(--accent-2)">Potencial</span>`:`<span class="tag">${c.kind==="empresa"?"Empresa":"Particular"}</span>`}</div>
       <small>${contact||"Sem NIF nem contactos"}</small>
-      ${c.notes?`<p class="cnote">${esc(c.notes)}</p>`:""}
+      ${note?`<p class="cnote">${esc(note)}</p>`:""}
       <ul class="mini">${ps.map(p=>`<li><button type="button" class="lnk" data-p="${p.id}">${esc(p.name)}</button><span class="r">${stChip(p.status)}<span class="num">${p.value?fmt(p.value):""}</span></span></li>`).join("") || `<li class="muted">Sem projetos.</li>`}</ul>
       <div class="card-f"><span class="num muted">${[agreed&&`Acordado: ${fmt(agreed)}`, billed&&`Faturado: ${fmt(billed)}`].filter(Boolean).join(" · ")}</span><span style="display:flex;gap:6px"><button type="button" data-edit="${c.id}">Editar</button><button type="button" data-newp="${c.id}">+ Projeto</button></span></div>
     </div>`; }).join("")
@@ -1607,11 +1728,12 @@ function renderClients(){
 }
 $("clList").onclick=e=>{
   const b=e.target.closest("button"); if(!b) return;
-  if(b.dataset.p) openProject(b.dataset.p);
+  if(b.dataset.p) goProject(b.dataset.p);
   else if(b.dataset.edit) openClient(b.dataset.edit);
   else if(b.dataset.newp) openProject(null, b.dataset.newp);
 };
-$("clQ").oninput=renderClients;
+$("clQ").oninput=renderClients; $("clSt").onchange=renderClients;
+const PROSP_F={clSector:"sector", clSite:"site", clSocial:"social", clMaps:"maps", clTools:"tools", clProblems:"problems"};
 
 let editingClient=null, afterClient=null, kindTouched=false;
 const KIND_HINT={particular:"Particular: não retém IRS na fonte quando te paga.", empresa:"Empresa: em regra, retém IRS na fonte quando te paga. O recibo verde mostra o valor retido."};
@@ -1620,7 +1742,9 @@ function openClient(id, after=null, pre=null){
   const c=id ? clientById(id) : pre; editingClient=id ? c : null; afterClient=after; kindTouched=!!id;
   $("clTitle").textContent= editingClient ? "Editar cliente" : "Novo cliente";
   $("clName").value=c?.name||""; $("clKind").value=c?.kind||"particular"; $("clNif").value=c?.nif||"";
-  $("clEmail").value=c?.email||""; $("clPhone").value=c?.phone||""; $("clAlias").value=c?.aliases||""; $("clNotes").value=c?.notes||"";
+  $("clEmail").value=c?.email||""; $("clPhone").value=c?.phone||""; $("clAlias").value=c?.aliases||""; $("clNotes").value=c?.notes||""; $("clContact").value=c?.contact||"";
+  for(const [i,k] of Object.entries(PROSP_F)) $(i).value=c?.[k]||"";
+  $("clProsp").open= !editingClient || !isCustomer(editingClient) || Object.values(PROSP_F).some(k=>c?.[k]);
   $("clDel").hidden=!editingClient; $("clErr").textContent=""; kindHint();
   $("clDlg").showModal(); $("clName").focus();
 }
@@ -1637,8 +1761,10 @@ $("clForm").onsubmit=async e=>{
   const twin=nif.n && biz().clients.find(c=>c.nif===nif.n && c!==editingClient);
   if(twin){ $("clErr").textContent=`Já existe um cliente com este NIF: ${twin.name}.`; return; }
   const c=editingClient || {id:uid()};
-  Object.assign(c, {name, kind:$("clKind").value, nif:nif.n, email, phone:$("clPhone").value.trim(),
+  let site=$("clSite").value.trim(); if(site && !/^https?:\/\//i.test(site)) site="https://"+site;
+  Object.assign(c, {name, kind:$("clKind").value, nif:nif.n, email, phone:$("clPhone").value.trim(), contact:$("clContact").value.replace(/\s+/g," ").trim(),
     aliases:splitKw($("clAlias").value).join(", "), notes:$("clNotes").value.trim(), at:Date.now()});
+  for(const [i,k] of Object.entries(PROSP_F)) c[k]= k==="site" ? site : $(i).value.trim();
   if(!editingClient) biz().clients.push(c);
   await save(); $("clDlg").close(); render(); toast(editingClient?"Cliente guardado.":`Cliente “${name}” criado.`);
   if(afterClient){ const f=afterClient; afterClient=null; f(c); }
@@ -1655,6 +1781,41 @@ $("clDel").onclick=async()=>{
 /* ---------- projetos ---------- */
 let pjMode = matchMedia("(max-width:700px)").matches ? "list" : "board";
 $("pjSt").innerHTML=`<option value="">Todos os estados</option>`+stOptions();
+const goProject = id => { location.hash="#negocio/projeto/"+id; };
+// Dinheiro de um projeto: valor acordado + alterações, o que já foi faturado (recibos do projeto) e o plano 30/70.
+function pjMoney(p){
+  const c=cfg(), value=p.value||0, chg=round2((p.changes||[]).reduce((s,x)=>s+(x.value||0),0)), total=round2(value+chg);
+  const rcs=biz().receipts.filter(r=>r.projectId===p.id && r.status!=="void"), billed=round2(rcs.reduce((s,r)=>s+r.base,0));
+  const dep=round2(value*c.depositPct/100);
+  return {chg, total, rcs, billed, received:round2(rcs.filter(r=>r.status==="paid").reduce((s,r)=>s+rcNet(r),0)),
+    dep, fin:round2(value-dep), left:round2(Math.max(0,total-billed)), cap:round2(value*c.changeCapPct/100)};
+}
+/* Lembretes de um projeto: a próxima ação e o que o processo pede — follow-up e validade da proposta, faturar a
+   adjudicação e o final, entrega prevista, fim da garantia e o teto das alterações. "info" não entra no A fazer. */
+function pjAlerts(p){
+  if(p.status==="perdido") return [];
+  const c=cfg(), m=pjMoney(p), t=today(), d=p.dates||{}, out=[], add=(date,text,info)=>out.push({p, date, text, info:!!info});
+  if(p.next && p.next.text) add(p.next.date||"", p.next.text);
+  if(p.status==="proposta" && p.proposalAt){
+    if(!stepsOf("proposta").some(l=>/follow/i.test(l) && stepDate(p,l))) add(addDays(p.proposalAt,c.followDays), `Follow-up da proposta enviada a ${dmy(p.proposalAt)}`);
+    const exp=addDays(p.proposalAt,c.validityDays);
+    if(dayGap(t,exp)<=7) add(exp, exp<t ? `A proposta expirou a ${dmy(exp)}` : `A proposta é válida até ${dmy(exp)}`);
+  }
+  if(["adjudicado","desenvolvimento"].includes(p.status) && m.dep>0 && m.billed+0.005<m.dep) add(d.adjudicado||t, `Faturar a adjudicação (${c.depositPct}%): ${fmt(m.dep)}`);
+  if(p.status==="desenvolvimento" && p.due && p.due<t) add(p.due, `A entrega prevista era a ${dmy(p.due)}`);
+  if(["entregue","manutencao"].includes(p.status) && m.left>0.005) add(d.entregue||t, `Faturar o que falta: ${fmt(m.left)}`);
+  if(p.status==="entregue" && d.entregue){ const end=addDays(d.entregue,c.warrantyDays); if(end>=t) add(end, `Garantia até ${dmy(end)}`, dayGap(t,end)>7); }
+  if(m.cap>0 && m.chg>=m.cap*0.8) add("", `Alterações: ${fmt(m.chg)} de um teto de ${fmt(m.cap)} (${c.changeCapPct}% do valor)`);
+  return out.sort((a,b)=>(a.date||"9999").localeCompare(b.date||"9999"));
+}
+const alertLevel = a => !a.date ? "" : a.date<today() ? "late" : dayGap(today(),a.date)<=3 ? "soon" : "";
+function renderTodo(){
+  const all=biz().projects.flatMap(pjAlerts).filter(a=>!a.info).sort((a,b)=>(a.date||"9999").localeCompare(b.date||"9999"));
+  $("todoCount").textContent= all.length ? `${all.length} ${all.length===1?"tarefa":"tarefas"}` : "";
+  $("todoList").innerHTML= all.length ? all.slice(0,30).map(a=>`<div class="todo ${alertLevel(a)}"><span class="d">${a.date ? (a.date<today()?"atrasado · ":"")+dmy(a.date) : "sem data"}</span>
+      <div>${esc(a.text)}<small>${esc(a.p.name)} · ${esc((clientById(a.p.clientId)||{}).name||"")}</small></div><a class="linkbtn" href="#negocio/projeto/${a.p.id}">Abrir</a></div>`).join("")
+    : `<p class="hint" style="margin:0">Nada pendente. As próximas ações e os lembretes dos projetos (follow-up, validade da proposta, faturação, garantia) aparecem aqui.</p>`;
+}
 function renderProjects(){
   const b=biz(), q=norm($("pjQ").value), st=$("pjSt").value, sel=$("pjCl"), was=sel.value;
   sel.innerHTML=`<option value="">Todos os clientes</option>`+sortedClients().map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join("");
@@ -1663,30 +1824,35 @@ function renderProjects(){
   const list=b.projects.filter(p=>(!cl||p.clientId===cl) && (!q||[p.name,cname(p),p.url].some(v=>norm(v).includes(q))));
   const sum=ks=>{ const l=list.filter(p=>ks.includes(p.status)); return [l.length, l.reduce((s,p)=>s+(p.value||0),0)]; };
   const np=n=>`${n} projeto${n===1?"":"s"}`;
-  const [n1,v1]=sum(["contacto","proposta"]), [n2,v2]=sum(["aceite","desenvolvimento"]), [n3,v3]=sum(["entregue","manutencao"]);
+  const [n1,v1]=sum(["prospecao","descoberta","proposta"]), [n2,v2]=sum(["adjudicado","desenvolvimento"]), [n3,v3]=sum(["entregue","manutencao"]);
+  const won=list.filter(p=>WON.includes(p.status)).length, lost=list.filter(p=>p.status==="perdido").length;
   $("pjKpis").innerHTML=[
-    ["Em negociação", fmt(v1), `${np(n1)} · contacto e proposta enviada`],
-    ["Em curso", fmt(v2), `${np(n2)} · aceite e em desenvolvimento`],
-    ["Entregues", fmt(v3), `${np(n3)} · entregue e manutenção`]
+    ["Em negociação", fmt(v1), `${np(n1)} · prospeção, descoberta e proposta`],
+    ["Em curso", fmt(v2), `${np(n2)} · adjudicados e em desenvolvimento`],
+    ["Entregues", fmt(v3), `${np(n3)} · entregues e em manutenção`],
+    ["Taxa de fecho", won+lost ? `${Math.round(won/(won+lost)*100)}%` : "—", won+lost ? `${won} ganho${won===1?"":"s"} · ${lost} perdido${lost===1?"":"s"}` : "ainda sem propostas decididas"]
   ].map(kpiHtml).join("");
   $("pjMode").querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed", x.dataset.m===pjMode));
   $("pjBoard").hidden=pjMode!=="board"; $("pjList").hidden=pjMode!=="list";
+  $(pjMode==="board"?"pjList":"pjBoard").innerHTML=""; // a vista escondida não guarda cartões de projetos que entretanto mudaram
   const shown=list.filter(p=>!st||p.status===st).sort(byRecent);
   const stSel=p=>`<select data-st="${p.id}" aria-label="Estado de ${esc(p.name)}">${stOptions()}</select>`;
+  const prog=p=>{ const ls=stepsOf(p.status); return ls.length ? `${ls.filter(l=>stepDate(p,l)).length}/${ls.length} passos` : ""; };
+  const firstAlert=p=>{ const a=pjAlerts(p).find(x=>!x.info); return a ? `<span class="al ${alertLevel(a)}">${a.date?dmy(a.date)+" · ":""}${esc(a.text)}</span>` : ""; };
   if(pjMode==="board"){
     $("pjBoard").innerHTML=PJ_ST.filter(([k])=>!st||k===st).map(([k,l,c])=>{
       const ps=shown.filter(p=>p.status===k), tot=ps.reduce((s,p)=>s+(p.value||0),0);
       return `<div class="bcol" data-col="${k}"><div class="bcol-h"><span class="st" style="--c:${c}">${l}</span><span class="num muted">${ps.length}</span></div>${tot?`<small class="bsum num">${fmt(tot)}</small>`:""}
         ${ps.map(p=>`<div class="pcard" draggable="true" data-id="${p.id}"><button type="button" class="lnk" data-open="${p.id}">${esc(p.name)}</button>
-          <small>${esc(cname(p))}${p.value?` · <span class="num">${fmt(p.value)}</span>`:""}</small>
-          ${p.due && ["aceite","desenvolvimento"].includes(p.status)?`<small>Entrega prevista: ${dmy(p.due)}</small>`:""}${stSel(p)}</div>`).join("") || `<p class="hint" style="margin:0;padding:2px">Sem projetos.</p>`}</div>`;
+          <small>${esc(cname(p))}${p.value?` · <span class="num">${fmt(p.value)}</span>`:""}${prog(p)?` · ${prog(p)}`:""}</small>
+          ${firstAlert(p)}${stSel(p)}</div>`).join("") || `<p class="hint" style="margin:0;padding:2px">Sem projetos.</p>`}</div>`;
     }).join("");
   } else {
-    $("pjList").innerHTML= shown.length ? shown.map(p=>`<div class="prow"><div><button type="button" class="lnk" data-open="${p.id}">${esc(p.name)}</button><small>${esc(cname(p))}${siteHost(p.url)?" · "+esc(siteHost(p.url)):""}</small></div>
+    $("pjList").innerHTML= shown.length ? shown.map(p=>`<div class="prow"><div><button type="button" class="lnk" data-open="${p.id}">${esc(p.name)}</button><small>${esc(cname(p))}${siteHost(p.url)?" · "+esc(siteHost(p.url)):""}${prog(p)?" · "+prog(p):""}</small>${firstAlert(p)?`<small>${firstAlert(p)}</small>`:""}</div>
       ${stSel(p)}<span class="num">${p.value?fmt(p.value):"—"}</span><small class="pd num" title="Data do estado mais recente">${dmy(lastDate(p))}</small></div>`).join("")
       : `<p class="empty">${b.projects.length?"Nenhum projeto corresponde aos filtros.":"Ainda não tens projetos. Cria o primeiro em Novo projeto."}</p>`;
   }
-  document.querySelectorAll("#pjBoard select[data-st], #pjList select[data-st]").forEach(s=>s.value=projectById(s.dataset.st).status);
+  document.querySelectorAll("#pjBoard select[data-st], #pjList select[data-st]").forEach(s=>{ const p=projectById(s.dataset.st); if(p) s.value=p.status; });
 }
 async function setStatus(p, s){
   if(p.status===s) return;
@@ -1694,7 +1860,7 @@ async function setStatus(p, s){
   await save(); render(); toast(`“${p.name}”: ${stLabel(s)}.`);
 }
 for(const el of [$("pjBoard"), $("pjList")]){
-  el.onclick=e=>{ const b=e.target.closest("button[data-open]"); if(b) openProject(b.dataset.open); };
+  el.onclick=e=>{ const b=e.target.closest("button[data-open]"); if(b) goProject(b.dataset.open); };
   el.onchange=e=>{ const s=e.target.closest("select[data-st]"); if(s) setStatus(projectById(s.dataset.st), s.value); };
 }
 // No Mac, os cartões arrastam-se entre colunas; no iPhone muda-se o estado no seletor de cada cartão.
@@ -1706,8 +1872,134 @@ $("pjBoard").ondrop=e=>{ const col=e.target.closest(".bcol"); if(!col || !dragId
 $("pjMode").onclick=e=>{ const b=e.target.closest("button[data-m]"); if(b){ pjMode=b.dataset.m; renderProjects(); } };
 $("pjQ").oninput=renderProjects; $("pjSt").onchange=renderProjects; $("pjCl").onchange=renderProjects;
 
-/* Datas de cada estado: a de um estado novo é a de hoje, e todas se podem corrigir. Se mudares o estado
-   no formulário e voltares atrás, a data acrescentada por engano sai. */
+/* ---------- página do projeto (#negocio/projeto/<id>) ----------
+   Processo (passos por fase), próxima ação, pagamentos, proposta e documentos, descoberta, alterações,
+   mensagens e notas. Os campos de texto gravam ao sair deles; o resto volta a desenhar a página. */
+const LINK_F=[["mockup","Mockup (Canva)"],["conceito","Documento conceptual"],["prototipo","Protótipo navegável"],["proposta","Proposta comercial"],["contrato","Adjudicação / contrato"]];
+const DISC_F=[
+  ["situacao","Situação atual","Como recebem clientes? Como recebem pedidos? Existe website? Quem o gere?"],
+  ["operacao","Operação","Como acompanham clientes? Utilizam Excel? Utilizam CRM?"],
+  ["crescimento","Crescimento","O que gostariam de melhorar? O que vos faz perder mais tempo?"],
+  ["problemas","Problemas identificados","Um por linha"],
+  ["oportunidades","Oportunidades","Uma por linha"]
+];
+function fillTpl(text, p){
+  const c=cfg(), cl=clientById(p.clientId)||{}, plan=c.plans.find(x=>x.k===p.plan), m=pjMoney(p), L=p.links||{};
+  const map={"Nome": cl.contact || (cl.kind==="particular" ? (cl.name||"").split(" ")[0] : ""), "Empresa": cl.name||"", "Projeto": p.name,
+    "Plano": plan ? plan.name : "", "Valor": p.value ? fmt(p.value) : "", "Adjudicação": m.dep ? fmt(m.dep) : "", "Mockup": L.mockup||"",
+    "Proposta": L.proposta||"", "Assinatura": c.signature||"", "Validade": `${c.validityDays} dias`};
+  return text.replace(/\[([^\]]+)\]/g,(a,k)=>k in map && map[k] ? map[k] : a);
+}
+let pjTpl="";
+function renderProjectPage(){
+  const p=projectById(pageId), el=$("pjPage");
+  if(!p){ el.innerHTML=`<section class="panel"><a class="back" href="#negocio/projetos">← Projetos</a><p class="empty">Este projeto não existe ou foi apagado.</p></section>`; return; }
+  const c=cfg(), cl=clientById(p.clientId)||{name:"(sem cliente)"}, m=pjMoney(p), al=pjAlerts(p), ix=PJ_ST.findIndex(x=>x[0]===p.status), L=p.links||{}, D=p.disc||{}, N=p.next||{};
+  const plan=c.plans.find(x=>x.k===p.plan), v=x=>esc(x||"");
+  const stages=PJ_ST.map(([k,l,col],i)=>{
+    const ls=stepsOf(k); if(!ls.length) return "";
+    const nd=ls.filter(x=>stepDate(p,x)).length, open= k===p.status || (i<ix && nd<ls.length);
+    return `<details class="stage"${open?" open":""}><summary><h3><span class="st" style="--c:${col}">${l}</span><span class="prog">${nd}/${ls.length}</span></h3></summary>
+      ${ls.map(x=>{ const d=stepDate(p,x); return `<label class="${d?"done":""}"><input type="checkbox" data-step="${esc(x)}"${d?" checked":""}><span>${esc(x)}</span>${d?`<small>${dmy(d)}</small>`:""}</label>`; }).join("")}</details>`;
+  }).join("");
+  const exp=p.proposalAt ? addDays(p.proposalAt,c.validityDays) : "";
+  const tpl=c.templates.find(t=>t.k===pjTpl) || c.templates[0];
+  el.innerHTML=`<section class="panel">
+    <a class="back" href="#negocio/projetos">← Projetos</a>
+    <div class="pjhead"><div><h2>${esc(p.name)}</h2><div class="facts"><span>${esc(cl.name)}${cl.contact?` · ${esc(cl.contact)}`:""}</span>${siteHost(p.url)?`<a href="${esc(p.url)}" target="_blank" rel="noopener noreferrer">${esc(siteHost(p.url))}</a>`:""}${plan?`<span>Plano ${esc(plan.name)}</span>`:""}${p.value?`<span class="num">${fmt(p.value)}</span>`:""}${p.due?`<span>Entrega prevista: ${dmy(p.due)}</span>`:""}</div></div>
+      <div class="ctl"><select data-act="status" aria-label="Fase do projeto">${stOptions()}</select><button type="button" data-act="edit">Editar dados</button></div></div>
+    ${al.map(a=>`<div class="alert ${alertLevel(a)}">${a.date?dmy(a.date)+" · ":""}${esc(a.text)}</div>`).join("")}
+  </section>
+  <section class="grid2">
+    <div class="panel"><div class="panel-h"><h2>Processo</h2><span class="label">passos de cada fase</span></div><div class="steps">${stages || `<p class="hint">Sem passos definidos. Acrescenta-os em Definições › Processo comercial.</p>`}</div></div>
+    <div style="display:flex;flex-direction:column;gap:22px;min-width:0">
+      <div class="panel"><h2>Próxima ação</h2>
+        <div class="addgrid"><label class="field wide"><span>O quê</span><input type="text" data-f="next.text" maxlength="200" value="${v(N.text)}" placeholder="Ex.: ligar para marcar a discovery call"></label>
+        <label class="field"><span>Quando</span><input type="date" data-f="next.date" value="${v(N.date)}"></label>
+        <div class="field" style="justify-content:flex-end"><button type="button" data-act="nextdone"${N.text?"":" disabled"}>Feita</button></div></div></div>
+      <div class="panel"><div class="panel-h"><h2>Pagamentos</h2><button type="button" data-act="receipt">Registar recibo</button></div>
+        <div class="kv"><span>Valor acordado</span><span class="num">${fmt(p.value||0)}</span>
+          <span class="muted">Adjudicação (${c.depositPct}%)</span><span class="num muted">${fmt(m.dep)}</span>
+          <span class="muted">Final (${100-c.depositPct}%)</span><span class="num muted">${fmt(m.fin)}</span>
+          ${m.chg?`<span>Alterações</span><span class="num">${fmt(m.chg)}</span>`:""}
+          <span>Faturado</span><span class="num">${fmt(m.billed)}</span>
+          <span>Recebido (sem retenção)</span><span class="num">${fmt(m.received)}</span>
+          <span class="tot">Por faturar</span><span class="num tot">${fmt(m.left)}</span></div>
+        ${m.rcs.length?`<ul class="mini">${m.rcs.map(r=>`<li><button type="button" class="lnk" data-rc="${r.id}">${esc(r.number)}</button><span class="r"><span class="muted">${dmy(r.date)}</span>${rcChip(r)}<span class="num">${fmt(r.base)}</span></span></li>`).join("")}</ul>`:""}
+      </div>
+    </div>
+  </section>
+  <section class="panel"><div class="panel-h"><h2>Proposta</h2>${exp?`<span class="label">válida até ${dmy(exp)}</span>`:""}</div>
+    <div class="addgrid">
+      <label class="field"><span>Plano</span><select data-f="plan"><option value="">Personalizado</option>${c.plans.map(x=>`<option value="${x.k}">${esc(x.name)} · desde ${fmt(x.price)} · ${esc(x.weeks)}</option>`).join("")}</select></label>
+      <label class="field"><span>Versão</span><input type="text" data-f="version" maxlength="20" value="${v(p.version)}" placeholder="2026v0"></label>
+      <label class="field"><span>Enviada a</span><input type="date" data-f="proposalAt" value="${v(p.proposalAt)}"></label>
+      <label class="field" style="flex-direction:row;align-items:center;gap:8px;align-self:end;padding-bottom:8px"><input type="checkbox" data-f="setup"${p.setup?" checked":""} style="width:auto"><span>Configuração inicial (${fmt(c.setupPrice)})</span></label>
+      ${plan?`<p class="hint wide" style="margin:0">Preço sugerido: ${fmt(plan.price+(p.setup?c.setupPrice:0))}${p.setup?" (com a configuração inicial)":""}. <button type="button" class="linkbtn" data-act="planprice">Usar como valor acordado</button></p>`:""}
+    </div>
+    <h3 style="font-size:.88rem;margin:6px 0 0">Documentos</h3>
+    <div class="addgrid">${LINK_F.map(([k,l])=>`<label class="field"><span>${l}${L[k]&&siteHost(L[k])?` · <a href="${esc(L[k])}" target="_blank" rel="noopener noreferrer">abrir</a>`:""}</span><input type="url" data-f="links.${k}" maxlength="500" value="${v(L[k])}" placeholder="https://…"></label>`).join("")}</div>
+  </section>
+  <section class="panel"><div class="panel-h"><h2>Descoberta</h2><span class="label">discovery call</span></div>
+    <div class="addgrid">${DISC_F.map(([k,l,h])=>`<label class="field${k==="situacao"?" wide":""}"><span>${l}</span><textarea data-f="disc.${k}" rows="3" maxlength="3000" placeholder="${esc(h)}">${v(D[k])}</textarea></label>`).join("")}</div>
+  </section>
+  <section class="panel"><div class="panel-h"><h2>Alterações</h2><span class="label num">${m.cap?`teto ${fmt(m.cap)} · usado ${fmt(m.chg)}`:""}</span></div>
+    <p class="help" style="margin:0">Depois da entrega, cada alteração é orçamentada à parte (mínimo de ${fmt(c.changeMin)} por intervenção, até ${c.changeCapPct}% do valor inicial). Entram no total a faturar do projeto.</p>
+    <div>${(p.changes||[]).map(x=>`<div class="chg"><span class="num muted d">${dmy(x.date)}</span><span>${esc(x.desc)}</span><span class="num">${fmt(x.value)}</span><button type="button" class="rowdel" data-delchg="${x.id}" title="Apagar esta alteração" aria-label="Apagar esta alteração">✕</button></div>`).join("") || `<p class="hint" style="margin:0">Sem alterações registadas.</p>`}</div>
+    <div class="chgform"><label class="field"><span>Data</span><input type="date" id="chgDate" value="${today()}"></label><label class="field w"><span>Descrição</span><input type="text" id="chgDesc" maxlength="200"></label><label class="field"><span>Valor (€)</span><input type="text" id="chgVal" inputmode="decimal"></label><button type="button" data-act="addchg">Acrescentar</button></div>
+  </section>
+  <section class="panel"><div class="panel-h"><h2>Mensagens</h2><select id="pjTplSel" aria-label="Modelo de mensagem">${c.templates.map(t=>`<option value="${t.k}">${esc(t.name)}</option>`).join("")}</select></div>
+    <pre class="prompt" id="pjTplOut">${tpl?esc(fillTpl(tpl.text,p)):""}</pre>
+    <div class="filters"><button type="button" data-act="copytpl">Copiar mensagem</button><span class="hint">O que fica entre [ ] falta preencher no cliente ou no projeto.</span></div>
+  </section>
+  <section class="panel"><h2>Notas</h2><label class="field"><span class="sr">Notas</span><textarea data-f="notes" rows="4" maxlength="5000">${v(p.notes)}</textarea></label></section>`;
+  el.querySelector('[data-act=status]').value=p.status;
+  el.querySelector('[data-f=plan]').value=p.plan||"";
+  if(tpl) $("pjTplSel").value=tpl.k;
+}
+const RERENDER_F=new Set(["plan","setup","proposalAt","next.date","next.text","links.mockup","links.proposta"]);
+$("pjPage").addEventListener("change", async e=>{
+  const p=projectById(pageId); if(!p) return;
+  const t=e.target;
+  if(t.id==="pjTplSel"){ pjTpl=t.value; renderProjectPage(); return; }
+  if(t.dataset.act==="status"){ setStatus(p, t.value); return; }
+  if(t.dataset.step!==undefined){
+    const k=stepKey(t.dataset.step); p.done ||= {};
+    if(t.checked){ p.done[k]=today(); if(/proposta.*enviad/i.test(t.dataset.step) && !p.proposalAt) p.proposalAt=today(); } else delete p.done[k];
+    p.at=Date.now(); await save(); render(); return;
+  }
+  const f=t.dataset.f; if(!f) return;
+  let val= t.type==="checkbox" ? t.checked : t.value.trim();
+  if(f.startsWith("links.") && val && !/^https?:\/\//i.test(val)) val="https://"+val;
+  const [a,b]=f.split(".");
+  if(b){ p[a]={...(p[a]||{}), [b]:val}; } else p[a]=val;
+  p.at=Date.now(); await save();
+  if(RERENDER_F.has(f)) render();
+});
+$("pjPage").addEventListener("click", async e=>{
+  const p=projectById(pageId); if(!p) return;
+  const b=e.target.closest("button"); if(!b) return;
+  if(b.dataset.rc){ openReceipt(b.dataset.rc); return; }
+  if(b.dataset.delchg){ p.changes=(p.changes||[]).filter(x=>x.id!==b.dataset.delchg); p.at=Date.now(); await save(); render(); toast("Alteração apagada."); return; }
+  const act=b.dataset.act;
+  if(act==="edit") openProject(p.id);
+  else if(act==="receipt") openReceipt(null, null, {clientId:p.clientId, projectId:p.id});
+  else if(act==="nextdone"){ const was=p.next; p.next={}; p.at=Date.now(); await save(); render(); toast(`Feito: ${was.text}.`,"Anular",async()=>{ p.next=was; p.at=Date.now(); await save(); render(); }); }
+  else if(act==="planprice"){ const c=cfg(), plan=c.plans.find(x=>x.k===p.plan); if(!plan) return; p.value=round2(plan.price+(p.setup?c.setupPrice:0)); p.at=Date.now(); await save(); render(); toast(`Valor acordado: ${fmt(p.value)}.`); }
+  else if(act==="addchg"){
+    const desc=$("chgDesc").value.replace(/\s+/g," ").trim(), val=round2(parseNumber($("chgVal").value)), date=parseDate($("chgDate").value)||today();
+    if(!desc || !(val>0)){ toast("Escreve a descrição e um valor maior que zero."); return; }
+    (p.changes ||= []).push({id:uid(), date, desc, value:val}); p.at=Date.now(); await save(); render();
+    const c=cfg(); toast(val<c.changeMin ? `Alteração registada, abaixo do mínimo de ${fmt(c.changeMin)} por intervenção.` : "Alteração registada.");
+  }
+  else if(act==="copytpl"){
+    const el=$("pjTplOut");
+    try{ await navigator.clipboard.writeText(el.textContent); toast("Mensagem copiada."); }
+    catch(_){ const r=document.createRange(); r.selectNodeContents(el); const sel=getSelection(); sel.removeAllRanges(); sel.addRange(r); toast("Mensagem selecionada. Copia com ⌘C."); }
+  }
+});
+
+/* Dados base do projeto (nome, cliente, fase, valor, site, entrega e datas de cada fase). Um projeto novo abre a sua página. */
 let editingProj=null, pjDates={}, pjAuto=null;
 function readPjDates(){ $("pjDates").querySelectorAll("input[data-k]").forEach(i=>{ if(i.value) pjDates[i.dataset.k]=i.value; else delete pjDates[i.dataset.k]; }); }
 function renderPjDates(){
@@ -1721,14 +2013,14 @@ $("pjStatus").onchange=()=>{
   pjAuto=null; renderPjDates();
 };
 function openProject(id, clientId){
-  if(!biz().clients.length){ toast("Cria primeiro o cliente do projeto."); openClient(null, c=>openProject(null, c.id)); return; }
+  if(!biz().clients.length){ toast("Cria primeiro o cliente (ou potencial cliente) do projeto."); openClient(null, c=>openProject(null, c.id)); return; }
   const p=id ? projectById(id) : null; editingProj=p;
   $("pjTitle").textContent= p ? "Editar projeto" : "Novo projeto";
   $("pjCli").innerHTML=sortedClients().map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join("");
   $("pjCli").value= p?.clientId || clientId || $("pjCl").value || sortedClients()[0].id;
-  $("pjName").value=p?.name||""; $("pjStatus").innerHTML=stOptions(); $("pjStatus").value=p?.status||"contacto";
-  $("pjValue").value= p?.value ? String(p.value).replace(".",",") : ""; $("pjUrl").value=p?.url||""; $("pjDue").value=p?.due||""; $("pjNotes").value=p?.notes||"";
-  pjDates={...(p?.dates||{})}; renderPjDates(); pjAuto=null; // a data do estado com que o formulário abre fica
+  $("pjName").value=p?.name||""; $("pjStatus").innerHTML=stOptions(); $("pjStatus").value=p?.status||"prospecao";
+  $("pjValue").value= p?.value ? String(p.value).replace(".",",") : ""; $("pjUrl").value=p?.url||""; $("pjDue").value=p?.due||"";
+  pjDates={...(p?.dates||{})}; renderPjDates(); pjAuto=null; // a data da fase com que o formulário abre fica
   $("pjDel").hidden=!p; $("pjErr").textContent="";
   $("pjDlg").showModal(); if(!p) $("pjName").focus();
 }
@@ -1743,16 +2035,52 @@ $("pjForm").onsubmit=async e=>{
   readPjDates();
   const status=$("pjStatus").value; pjDates[status] ||= today();
   const p=editingProj || {id:uid()};
-  Object.assign(p, {name, clientId:$("pjCli").value, status, value, url, due:$("pjDue").value||"", notes:$("pjNotes").value.trim(), dates:{...pjDates}, at:Date.now()});
+  Object.assign(p, {name, clientId:$("pjCli").value, status, value, url, due:$("pjDue").value||"", dates:{...pjDates}, at:Date.now()});
   if(!editingProj) biz().projects.push(p);
   await save(); $("pjDlg").close(); render(); toast(editingProj?"Projeto guardado.":`Projeto “${name}” criado.`);
+  if(!editingProj) goProject(p.id);
 };
 $("pjDel").onclick=async()=>{
   const p=editingProj, nr=biz().receipts.filter(r=>r.projectId===p.id).length; $("pjDlg").close();
   if(!await ask({title:`Apagar “${p.name}”?`, text:(nr?`${nr===1?"O recibo associado fica":`Os ${nr} recibos associados ficam`} só com o cliente. `:"")+"Não dá para desfazer.", ok:"Apagar", danger:true})) return;
   for(const r of biz().receipts) if(r.projectId===p.id){ r.projectId=""; r.at=Date.now(); }
-  forget("projects", p.id); await save(); render(); toast("Projeto apagado.");
+  forget("projects", p.id); await save();
+  if(sub==="projeto") location.hash="#negocio/projetos"; else render();
+  toast("Projeto apagado.");
 };
+
+/* ---------- definições do negócio ---------- */
+const CFG_NUM={setupPrice:"Configuração inicial", depositPct:"Adjudicação", followDays:"Follow-up", validityDays:"Validade", warrantyDays:"Garantia", changeMin:"Alteração: mínimo", changeCapPct:"Alterações: teto"};
+function renderBizSettings(){
+  if(!state.biz || !state.biz.cfg) return;
+  const c=cfg();
+  $("stepGrid").innerHTML=PJ_ST.filter(([k])=>k!=="perdido").map(([k,l])=>`<label><span>${l}</span><textarea data-stage="${k}" rows="4">${esc(c.steps[k]||"")}</textarea></label>`).join("");
+  $("planGrid").innerHTML=c.plans.map((x,i)=>`<fieldset><legend>Plano ${i+1}</legend>
+    <label class="field"><span>Nome</span><input type="text" data-plan="${i}" data-pf="name" maxlength="40" value="${esc(x.name)}"></label>
+    <label class="field"><span>Desde (€)</span><input type="text" inputmode="decimal" data-plan="${i}" data-pf="price" value="${String(x.price).replace(".",",")}"></label>
+    <label class="field"><span>Prazo</span><input type="text" data-plan="${i}" data-pf="weeks" maxlength="40" value="${esc(x.weeks)}"></label></fieldset>`).join("");
+  $("condForm").querySelectorAll("[data-c]").forEach(i=>{ const v=c[i.dataset.c]; i.value= typeof v==="number" ? String(v).replace(".",",") : (v||""); });
+  $("tplGrid").innerHTML=c.templates.map(t=>`<label><span>${esc(t.name)}</span><textarea data-tpl="${t.k}" rows="7">${esc(t.text)}</textarea></label>`).join("");
+}
+$("saveSteps").onclick=async()=>{ const c=cfg(); $("stepGrid").querySelectorAll("textarea").forEach(t=>c.steps[t.dataset.stage]=splitLines(t.value).join("\n")); c.at=Date.now(); await save(); render(); toast("Passos do processo guardados."); };
+$("resetSteps").onclick=async()=>{ const c=cfg(); c.steps={...STEPS_DEFAULT}; c.at=Date.now(); await save(); renderBizSettings(); render(); toast("Passos repostos como no guia."); };
+$("condForm").onsubmit=async e=>{
+  e.preventDefault();
+  const c=cfg(), next={}, plans=c.plans.map(x=>({...x}));
+  for(const i of $("condForm").querySelectorAll("[data-c]")){
+    const k=i.dataset.c; if(k==="signature"){ next[k]=i.value.trim(); continue; }
+    const n=parseNumber(i.value); if(!(n>=0) || (k.endsWith("Pct") && n>100)){ toast(`${CFG_NUM[k]}: valor inválido.`); i.focus(); return; }
+    next[k]=/Days$/.test(k) ? Math.round(n) : round2(n);
+  }
+  for(const i of $("planGrid").querySelectorAll("[data-plan]")){
+    const x=plans[+i.dataset.plan], f=i.dataset.pf;
+    if(f==="price"){ const n=parseNumber(i.value); if(!(n>=0)){ toast("Preço de plano inválido."); i.focus(); return; } x.price=round2(n); }
+    else x[f]=i.value.replace(/\s+/g," ").trim() || x[f];
+  }
+  Object.assign(c, next, {plans, at:Date.now()}); await save(); render(); toast("Condições guardadas.");
+};
+$("saveTpl").onclick=async()=>{ const c=cfg(); $("tplGrid").querySelectorAll("textarea").forEach(t=>{ const x=c.templates.find(y=>y.k===t.dataset.tpl); if(x) x.text=t.value.trim(); }); c.at=Date.now(); await save(); render(); toast("Modelos guardados."); };
+$("resetTpl").onclick=async()=>{ const c=cfg(); c.templates=TPL_DEFAULT.map(t=>({...t})); c.at=Date.now(); await save(); renderBizSettings(); render(); toast("Modelos repostos."); };
 
 /* ---------- recibos verdes ---------- */
 /* Só se registam aqui: são emitidos no Portal das Finanças. total = base + IVA; a receber = total − retenção na fonte.
@@ -1904,7 +2232,7 @@ function fillRcProj(sel){
   $("rcProj").innerHTML=`<option value="">Sem projeto</option>`+ps.map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join("");
   $("rcProj").value= ps.some(p=>p.id===sel) ? sel : "";
 }
-function openReceipt(id, p=null){
+function openReceipt(id, p=null, pre=null){
   const r=id ? biz().receipts.find(x=>x.id===id) : null; editingRc=r; rcParsed=p; rcSaved=false;
   const v=r||p||{}, file=(r||p||{}).file;
   $("rcTitle").textContent= r ? "Editar recibo" : p ? "Confirmar recibo importado" : "Novo recibo";
@@ -1913,7 +2241,7 @@ function openReceipt(id, p=null){
   $("rcStatus").value=r?.status||"pending"; $("rcPaid").value=r?.paidAt||"";
   $("rcDesc").value=v.desc||""; $("rcBase").value=money(v.base); $("rcIva").value=v.iva?money(v.iva):""; $("rcRet").value=v.ret?money(v.ret):"";
   const match= r ? r.clientId : p ? ((p.nif && biz().clients.find(c=>c.nif===p.nif)) || (p.name && biz().clients.find(c=>norm(c.name)===norm(p.name))) || {}).id : "";
-  fillRcClients(match); fillRcProj(r?.projectId||"");
+  fillRcClients(pre ? pre.clientId : match); fillRcProj(pre ? pre.projectId : r?.projectId||"");
   Object.values(RC_FIELDS).forEach(i=>$(i).classList.remove("miss"));
   if(p) for(const k of p.miss) if(!(k==="nif" && match)) $(RC_FIELDS[k]).classList.add("miss");
   const notes=[p&&p.miss.length?"Confirma os campos assinalados: não os encontrei no PDF.":"", p?.warn||""].filter(Boolean).join(" ");

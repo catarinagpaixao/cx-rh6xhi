@@ -47,11 +47,22 @@ A conta é a mesma para o pessoal e para o negócio, por isso cada movimento tem
 
 - No topo, **Pessoal | Negócio** muda de vista. O painel pessoal não conta as despesas nem as entradas do negócio, que aparecem num resumo à parte (o quadrado "Negócio").
 - Na tabela, o botão **Pessoal / Negócio** de cada linha muda o âmbito desse movimento. Escolher uma categoria do negócio (Domínios, Alojamento, Software…) também o passa para o negócio, e vice-versa.
-- **Regras do negócio** (na vista Negócio): palavras-chave que marcam sozinhas um movimento como negócio, por exemplo `hostinger` ou `namecheap`.
-- **Início de atividade** (na vista Negócio): antes desta data tudo é pessoal, mesmo que bata com uma regra do negócio. Ao atualizar a app, fica a data desse dia, e os movimentos que já existiam continuam pessoais.
+- **Regras do negócio** (Negócio → Definições): palavras-chave que marcam sozinhas um movimento como negócio, por exemplo `hostinger` ou `namecheap`.
+- **Início de atividade** (Negócio → Definições): antes desta data tudo é pessoal, mesmo que bata com uma regra do negócio. Ao atualizar a app, fica a data desse dia, e os movimentos que já existiam continuam pessoais.
 - Uma despesa usada nas duas coisas divide-se com a tesoura; cada parte tem o seu âmbito.
 - **Clientes** (Negócio → Clientes): nome, tipo (particular ou empresa), NIF (a app confere o dígito de controlo), contactos, notas e o "nome no extrato" — como o nome aparece nas transferências do banco, para reconhecer os pagamentos. Cada cartão mostra os projetos do cliente e o total acordado.
-- **Projetos** (Negócio → Projetos): estado (contacto → proposta enviada → aceite → em desenvolvimento → entregue → manutenção, ou cancelado), valor acordado, site, entrega prevista e notas. A data de cada estado fica registada e pode ser corrigida. Vista em **Quadro** (no Mac, arrasta os cartões entre colunas) ou em **Lista**, com filtros por estado e cliente.
+- **Potenciais clientes**: um cliente é "potencial" até ter um projeto adjudicado (ou um recibo). Na secção **Prospeção** do cliente registas setor, site atual, redes sociais, Google Maps e reviews, ferramentas que usam e problemas observados (fase 1 do processo comercial). A **pessoa de contacto** é o [Nome] das mensagens.
+- **Projetos** (Negócio → Projetos): o funil segue o processo comercial — Prospeção (fases 1–2), Descoberta (3–5), Proposta (6–7), Adjudicado (8), Em desenvolvimento (9), Entregue, Manutenção ou Perdido. Vista em **Quadro** (no Mac, arrasta os cartões entre colunas) ou em **Lista**; cada cartão mostra os passos feitos da fase e o lembrete mais urgente. Em cima: em negociação, em curso, entregues e taxa de fecho.
+- **Página do projeto** (carrega no nome de um projeto):
+  - **Processo**: a lista de passos de cada fase; marcar um passo guarda a data. Marcar "Proposta comercial enviada" preenche a data de envio.
+  - **Próxima ação**: o que tens de fazer a seguir e quando.
+  - **Pagamentos**: valor acordado, adjudicação (30%) e final (70%), faturado, recebido e por faturar; **Registar recibo** abre um recibo já com o cliente e o projeto.
+  - **Proposta**: plano (Basic, Business, Enterprise CRM ou personalizado), versão, data de envio e configuração inicial; o preço do plano pode passar a valor acordado. **Documentos**: links para o mockup, documento conceptual, protótipo, proposta e contrato.
+  - **Descoberta**: notas da discovery call, com as perguntas do guia, e o resumo de problemas e oportunidades.
+  - **Alterações** depois da entrega (mínimo por intervenção e teto em % do valor inicial), que entram no total a faturar.
+  - **Mensagens**: modelos (primeira mensagem, depois da apresentação, envio da proposta, follow-up, fecho) preenchidos com os dados do projeto, para copiar.
+- **A fazer** (Negócio → Painel): as próximas ações e os lembretes de todos os projetos — follow-up da proposta, validade a acabar, faturar a adjudicação ou o final, entrega prevista ultrapassada, fim da garantia e alterações perto do teto. Atrasados a vermelho.
+- **Definições** (Negócio → Definições): passos do processo comercial, planos e preços, condições (adjudicação, follow-up, validade, garantia, alterações, assinatura), modelos de mensagens, regras do negócio e início de atividade.
 - **Recibos verdes** (Negócio → Recibos): a app não emite faturas, só as regista. Descarrega o PDF da fatura-recibo no Portal das Finanças e arrasta-o para a caixa (ou cola-o com ⌘V; também é reconhecido na caixa do CA). A app lê número, data, NIF e nome do cliente, descrição, valor base, IVA e retenção na fonte, e mostra um formulário para confirmar: os campos que não encontrou ficam assinalados a laranja. O cliente é reconhecido pelo NIF; se ainda não existir, há um botão para o criar com os dados do PDF. Total = base + IVA; **a receber** = total − retenção na fonte.
   - Estado: por receber, recebido (com data) ou anulado. Se emitires uma Fatura e mais tarde o Recibo, importa os dois: o recibo marca a fatura como recebida.
   - Em cima: faturado no ano, por receber, retenções do ano e recebido.
